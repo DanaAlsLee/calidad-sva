@@ -658,4 +658,380 @@ ERRORES.forEach((grp, gi) => {
   errContainer.appendChild(block);
 });
 
-document.querySelectorAll('[data-toggle-btn]').for
+document.querySelectorAll('[data-toggle-btn]').forEach(btn=>{
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const id = btn.getAttribute('data-toggle-btn');
+    document.getElementById('desc-'+id).classList.toggle('open');
+  });
+});
+
+function setTagStatus(tagId, isError){
+  const el = document.getElementById(tagId);
+  if(!el) return;
+  el.querySelector('.icon').textContent = isError ? '🔥' : '🍃';
+  el.style.color = isError ? 'var(--crit)' : 'var(--ink-soft)';
+}
+
+/* ============ SCORE LOGIC ============ */
+function computeScore(){
+  let base = 0;
+  ENC.forEach((attr, ai)=>{
+    if(encState[ai].cumple === '1') base += attr.weight;
+  });
+  base = Math.round(base * 10) / 10;
+
+  let triggeredErrors = [];
+  ERRORES.forEach((grp, gi)=>{
+    if(errState[gi].cumple === '0'){
+      triggeredErrors.push(`${grp.name} · ${errState[gi].motivo || '(motivo no especificado)'}`);
+    }
+  });
+
+  const final = triggeredErrors.length > 0 ? 0 : base;
+  return { base, triggeredErrors, final };
+}
+
+function refreshScoreBar(){
+  const { base, triggeredErrors, final } = computeScore();
+  document.getElementById('scoreBase').textContent = base.toFixed(1);
+  document.getElementById('scoreErrores').textContent = triggeredErrors.length;
+  const finalEl = document.getElementById('scoreFinal');
+  finalEl.textContent = final.toFixed(1);
+  finalEl.style.color = final === 0 ? 'var(--crit)' : (final >= 85 ? 'var(--ok)' : (final>=70 ? 'var(--warn)' : 'var(--crit)'));
+  document.getElementById('scoreErrores').style.color = triggeredErrors.length>0 ? 'var(--crit)' : 'var(--ok)';
+}
+
+document.querySelectorAll('.enc-cumple').forEach(sel=>{
+  sel.addEventListener('change', ()=>{
+    const ai = sel.dataset.ai;
+    encState[ai].cumple = sel.value;
+    const motivoSel = document.querySelector(`.enc-motivo[data-ai="${ai}"]`);
+    if(sel.value === '0'){
+      motivoSel.disabled = false;
+    } else {
+      motivoSel.disabled = true;
+      motivoSel.value = '';
+      encState[ai].motivo = '';
+    }
+    setTagStatus('tag-enc-'+ai, sel.value === '0');
+    refreshScoreBar();
+  });
+});
+document.querySelectorAll('.enc-motivo').forEach(sel=>{
+  sel.addEventListener('change', ()=>{
+    encState[sel.dataset.ai].motivo = sel.value;
+    refreshScoreBar();
+  });
+});
+document.querySelectorAll('.err-cumple').forEach(sel=>{
+  sel.addEventListener('change', ()=>{
+    const gi = sel.dataset.gi;
+    errState[gi].cumple = sel.value;
+    const motivoSel = document.querySelector(`.err-motivo[data-gi="${gi}"]`);
+    if(sel.value === '0'){
+      motivoSel.disabled = false;
+    } else {
+      motivoSel.disabled = true;
+      motivoSel.value = '';
+      errState[gi].motivo = '';
+    }
+    setTagStatus('tag-err-'+gi, sel.value === '0');
+    refreshScoreBar();
+  });
+});
+document.querySelectorAll('.err-motivo').forEach(sel=>{
+  sel.addEventListener('change', ()=>{
+    errState[sel.dataset.gi].motivo = sel.value;
+    refreshScoreBar();
+  });
+});
+
+refreshScoreBar();
+
+if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PEGAR_AQUI') !== -1){
+  document.getElementById('configWarning').style.display = 'block';
+}
+
+/* ============ TABS ============ */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+tab.dataset.view).classList.add('active');
+    document.getElementById('scoreBar').style.display = tab.dataset.view === 'evaluar' ? 'block' : 'none';
+    if(tab.dataset.view === 'metricas') loadMetrics();
+  });
+});
+
+/* ============ TOAST ============ */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ============ VALIDACIÓN ============ */
+function validarFormulario(){
+  const faltantes = [];
+
+  document.querySelectorAll('.enc-cumple, .err-cumple, .motivo-select').forEach(sel=>sel.classList.remove('required-missing'));
+
+  const evaluador = document.getElementById('fEvaluador').value.trim();
+  const asesor = document.getElementById('fAsesor').value.trim();
+  const fecha = document.getElementById('fFecha').value.trim();
+  const numLlamada = document.getElementById('fNumLlamada').value.trim();
+  const comentarios = document.getElementById('fComentarios').value.trim();
+  const fortalezas = document.getElementById('fFortalezas').value.trim();
+  const oportunidades = document.getElementById('fOportunidades').value.trim();
+
+  if(!evaluador) faltantes.push('Evaluador/a');
+  if(!asesor) faltantes.push('Asesor/a evaluado/a');
+  if(!fecha) faltantes.push('Fecha de la llamada');
+  if(!numLlamada) faltantes.push('N° de llamada');
+  if(!comentarios) faltantes.push('Comentarios');
+  if(!fortalezas) faltantes.push('Fortalezas');
+  if(!oportunidades) faltantes.push('Oportunidades de mejora');
+
+  ENC.forEach((attr, ai)=>{
+    const st = encState[ai];
+    if(st.cumple === ''){
+      faltantes.push(`ENC · ${attr.name}`);
+      document.querySelector(`.enc-cumple[data-ai="${ai}"]`).classList.add('required-missing');
+    } else if(st.cumple === '0' && !st.motivo){
+      faltantes.push(`ENC · ${attr.name} (motivo)`);
+      document.querySelector(`.enc-motivo[data-ai="${ai}"]`).classList.add('required-missing');
+    }
+  });
+
+  ERRORES.forEach((grp, gi)=>{
+    const st = errState[gi];
+    if(st.cumple === ''){
+      faltantes.push(`${grp.tipo} · ${grp.name}`);
+      document.querySelector(`.err-cumple[data-gi="${gi}"]`).classList.add('required-missing');
+    } else if(st.cumple === '0' && !st.motivo){
+      faltantes.push(`${grp.tipo} · ${grp.name} (motivo)`);
+      document.querySelector(`.err-motivo[data-gi="${gi}"]`).classList.add('required-missing');
+    }
+  });
+
+  return faltantes;
+}
+
+/* ============ SAVE ============ */
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const faltantes = validarFormulario();
+  if(faltantes.length > 0){
+    showToast(`Faltan completar ${faltantes.length} campo(s) obligatorio(s)`);
+    return;
+  }
+
+  const evaluador = document.getElementById('fEvaluador').value.trim();
+  const asesor = document.getElementById('fAsesor').value.trim();
+  const { base, triggeredErrors, final } = computeScore();
+  const record = {
+    evaluador,
+    asesor,
+    fecha: document.getElementById('fFecha').value,
+    numLlamada: document.getElementById('fNumLlamada').value.trim(),
+    cliente: document.getElementById('fCliente').value.trim(),
+    comentarios: document.getElementById('fComentarios').value.trim(),
+    fortalezas: document.getElementById('fFortalezas').value.trim(),
+    oportunidadesMejora: document.getElementById('fOportunidades').value.trim(),
+    encPorAtributo: ENC.map((attr,ai)=>({ attr:attr.name, weight:attr.weight, cumple:encState[ai].cumple, motivo:encState[ai].motivo, pct: encState[ai].cumple==='1' ? 100 : 0 })),
+    errPorAtributo: ERRORES.map((grp,gi)=>({ tipo:grp.tipo, attr:grp.name, cumple:errState[gi].cumple, motivo:errState[gi].motivo })),
+    erroresDetectados: triggeredErrors,
+    notaBase: base,
+    notaFinal: final,
+    guardadoEn: new Date().toISOString()
+  };
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(record)
+    });
+    const data = await res.json();
+    if(data && data.ok){
+      showToast('Evaluación guardada ✓');
+      resetForm();
+    } else {
+      showToast('No se pudo guardar. Probá de nuevo.');
+    }
+  }catch(err){
+    console.error(err);
+    showToast('Error al guardar la evaluación. Revisá la conexión con Google Sheets.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Guardar evaluación';
+});
+
+function resetForm(){
+  document.getElementById('fAsesor').value = '';
+  document.getElementById('fCliente').value = '';
+  document.getElementById('fNumLlamada').value = '';
+  document.getElementById('fComentarios').value = '';
+  document.getElementById('fFortalezas').value = '';
+  document.getElementById('fOportunidades').value = '';
+  document.getElementById('fFecha').value = '';
+  encState = ENC.map(() => ({ cumple:'', motivo:'' }));
+  errState = ERRORES.map(() => ({ cumple:'', motivo:'' }));
+  document.querySelectorAll('.enc-cumple, .err-cumple').forEach(sel=>sel.value='');
+  document.querySelectorAll('.enc-motivo, .err-motivo').forEach(sel=>{ sel.value=''; sel.disabled=true; });
+  document.querySelectorAll('.required-missing').forEach(el=>el.classList.remove('required-missing'));
+  ENC.forEach((attr,ai)=> setTagStatus('tag-enc-'+ai, false));
+  ERRORES.forEach((grp,gi)=> setTagStatus('tag-err-'+gi, false));
+  document.querySelectorAll('.attr-desc.open').forEach(d=>d.classList.remove('open'));
+  refreshScoreBar();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ============ METRICAS ============ */
+async function loadMetrics(){
+  const box = document.getElementById('metricSummary');
+  box.innerHTML = '<div class="empty-note">Cargando datos del equipo...</div>';
+  document.getElementById('rankingBox').innerHTML = '';
+  document.getElementById('attrBarsBox').innerHTML = '';
+  document.getElementById('errorBarsBox').innerHTML = '';
+
+  let records = [];
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=list`);
+    const data = await res.json();
+    if(!data || !data.ok){
+      box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">No se pudieron cargar las métricas.</div>';
+      return;
+    }
+    // encPorAtributo y erroresDetectados viajan como texto JSON dentro de la celda; se parsean de nuevo acá.
+    records = (data.records || []).map(r=>{
+      const rec = { ...r };
+      ['encPorAtributo','erroresDetectados'].forEach(field=>{
+        if(typeof rec[field] === 'string'){
+          try{ rec[field] = JSON.parse(rec[field]); }catch(e){ rec[field] = []; }
+        }
+      });
+      rec.notaFinal = Number(rec.notaFinal) || 0;
+      return rec;
+    });
+    if(records.length === 0){
+      box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Todavía no hay evaluaciones cargadas por el equipo.</div>';
+      return;
+    }
+  }catch(err){
+    console.error(err);
+    box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">No se pudieron cargar las métricas. Revisá la conexión con Google Sheets.</div>';
+    return;
+  }
+
+  // poblar filtro de asesores
+  const asesores = Array.from(new Set(records.map(r=>r.asesor))).sort();
+  const sel = document.getElementById('filterAsesor');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">Todos los asesores</option>' + asesores.map(a=>`<option value="${a}">${a}</option>`).join('');
+  sel.value = prevVal;
+
+  renderMetrics(records, sel.value);
+  sel.onchange = ()=> renderMetrics(records, sel.value);
+}
+
+function renderMetrics(records, filtro){
+  const data = filtro ? records.filter(r=>r.asesor === filtro) : records;
+
+  const box = document.getElementById('metricSummary');
+  if(data.length === 0){
+    box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Sin evaluaciones para este filtro.</div>';
+    document.getElementById('rankingBox').innerHTML='';
+    document.getElementById('attrBarsBox').innerHTML='';
+    document.getElementById('errorBarsBox').innerHTML='';
+    return;
+  }
+
+  const total = data.length;
+  const promedio = data.reduce((s,r)=>s+r.notaFinal,0)/total;
+  const conError = data.filter(r=>r.erroresDetectados && r.erroresDetectados.length>0).length;
+  const pctError = (conError/total)*100;
+
+  box.innerHTML = `
+    <div class="metric-box"><div class="num">${total}</div><div class="lbl">Evaluaciones</div></div>
+    <div class="metric-box"><div class="num">${promedio.toFixed(1)}</div><div class="lbl">Nota final promedio</div></div>
+    <div class="metric-box"><div class="num">${conError}</div><div class="lbl">Llamadas con error crítico</div></div>
+    <div class="metric-box"><div class="num">${pctError.toFixed(0)}%</div><div class="lbl">% con cero absoluto</div></div>
+  `;
+
+  // ranking por asesor (siempre sobre el set completo, sin filtrar por sí mismo)
+  const porAsesor = {};
+  records.forEach(r=>{
+    if(!porAsesor[r.asesor]) porAsesor[r.asesor] = [];
+    porAsesor[r.asesor].push(r.notaFinal);
+  });
+  const ranking = Object.entries(porAsesor).map(([nombre, notas])=>({
+    nombre,
+    cant: notas.length,
+    prom: notas.reduce((a,b)=>a+b,0)/notas.length
+  })).sort((a,b)=>b.prom-a.prom);
+
+  document.getElementById('rankingBox').innerHTML = `
+    <table class="rank">
+      <thead><tr><th>Asesor</th><th>Evaluaciones</th><th>Promedio</th><th></th></tr></thead>
+      <tbody>
+        ${ranking.map(r=>{
+          const pillClass = r.prom>=85?'ok':(r.prom>=70?'warn':'crit');
+          return `<tr>
+            <td>${r.nombre}</td>
+            <td>${r.cant}</td>
+            <td>${r.prom.toFixed(1)}</td>
+            <td><span class="pill ${pillClass}">${pillClass==='ok'?'Bien':pillClass==='warn'?'A mejorar':'Crítico'}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // promedio por atributo ENC (sobre datos filtrados)
+  const attrTotals = {};
+  ENC.forEach(a=> attrTotals[a.name] = {sum:0, count:0});
+  data.forEach(r=>{
+    (r.encPorAtributo||[]).forEach(e=>{
+      if(attrTotals[e.attr]){
+        attrTotals[e.attr].sum += e.pct;
+        attrTotals[e.attr].count += 1;
+      }
+    });
+  });
+  document.getElementById('attrBarsBox').innerHTML = ENC.map(a=>{
+    const t = attrTotals[a.name];
+    const avg = t.count ? (t.sum/t.count) : 0;
+    return `
+      <div class="bar-row">
+        <div class="bar-label"><span>${a.name}</span><span>${avg.toFixed(0)}%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${avg}%"></div></div>
+      </div>
+    `;
+  }).join('');
+
+  // errores criticos mas frecuentes
+  const errCount = {};
+  data.forEach(r=>{
+    (r.erroresDetectados||[]).forEach(e=>{
+      errCount[e] = (errCount[e]||0) + 1;
+    });
+  });
+  const errList = Object.entries(errCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxCount = errList.length ? errList[0][1] : 1;
+
+  document.getElementById('errorBarsBox').innerHTML = errList.length ? errList.map(([txt,count])=>`
+    <div class="bar-row">
+      <div class="bar-label"><span>${txt}</span><span>${count}</span></div>
+      <div class="bar-track"><div class="bar-fill crit" style="width:${(count/maxCount)*100}%"></div></div>
+    </div>
+  `).join('') : '<div class="empty-note">Sin errores críticos registrados en este filtro.</div>';
+}
+</script>
+</body>
+</html>
