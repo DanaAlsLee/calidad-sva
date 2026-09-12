@@ -305,18 +305,39 @@
 </head>
 <body>
 
+<div id="loginScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--primary-dark);padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;">
+    <h1 style="margin:0 0 4px 0;font-size:1.15rem;color:var(--primary-dark);">Calidad SVA OUT</h1>
+    <p style="margin:0 0 18px 0;font-size:.8rem;color:var(--ink-soft);">Ingresá tu usuario y clave para continuar</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="loginUser" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Clave</label>
+      <input type="password" id="loginPass" autocomplete="current-password">
+    </div>
+    <div id="loginError" style="display:none;color:var(--crit);font-size:.8rem;margin-bottom:10px;">Usuario o clave incorrectos.</div>
+    <button id="loginBtn" class="save-btn" style="width:100%;">Ingresar</button>
+  </div>
+</div>
+
+<div id="appContent" style="display:none;">
+
 <div class="topbar">
   <h1>Calidad SVA OUT</h1>
   <p>Telecentro · Evaluación de llamadas</p>
   <div class="tabs">
     <button class="tab active" data-view="evaluar">Evaluar llamada</button>
     <button class="tab" data-view="metricas">Métricas del equipo</button>
+    <button class="tab" id="logoutBtn" style="flex:0 0 auto;color:#B9D2CD;">Cerrar sesión</button>
   </div>
 </div>
 
 <div id="configWarning" style="display:none;background:#FBEEDD;color:#8A5518;padding:10px 16px;font-size:.8rem;text-align:center;border-bottom:1px solid #E7CDA0;">
   ⚠ Falta configurar la URL de Google Apps Script en el código (variable <code>APPS_SCRIPT_URL</code>). Hasta hacerlo, no se van a poder guardar ni cargar evaluaciones.
 </div>
+
 
 <main>
   <!-- ===================== EVALUAR ===================== -->
@@ -439,10 +460,68 @@
 
 <div class="toast" id="toast"></div>
 
+</div><!-- /appContent -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* ============ CONFIG ============ */
 // Pegá acá la URL de tu Google Apps Script Web App (ver instrucciones de despliegue).
-const APPS_SCRIPT_URL = "PEGAR_AQUI_TU_URL_DE_APPS_SCRIPT";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3ihx33chKMxDXS33P_9KKBSTODmQELB7gTEF3trqvlsfXFIeKaTrFuzcbcSC7QLgAFg/exec";
+
+// Pegá acá la config de tu proyecto de Firebase (Configuración del proyecto > tus apps > Config del SDK).
+const firebaseConfig = {
+  apiKey: "AIzaSyBWHr2HtOq-7PwF9lCDnex0fHCcxLjYcHg",
+  authDomain: "qa-svas.firebaseapp.com",
+  projectId: "qa-svas",
+  appId: "1:1072491026754:web:32fb1376c188ae54a4d0db"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+/* ============ LOGIN (Firebase Authentication) ============ */
+(function initLogin(){
+  const loginScreen = document.getElementById('loginScreen');
+  const appContent = document.getElementById('appContent');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginError = document.getElementById('loginError');
+
+  // Mantiene la sesión activa: si ya inició sesión antes en este navegador, entra directo.
+  auth.onAuthStateChanged(user => {
+    if(user){
+      loginScreen.style.display = 'none';
+      appContent.style.display = 'block';
+    } else {
+      loginScreen.style.display = 'flex';
+      appContent.style.display = 'none';
+    }
+  });
+
+  function intentarLogin(){
+    const email = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    loginError.style.display = 'none';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Ingresando...';
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(() => {
+        loginError.textContent = 'Usuario o clave incorrectos.';
+        loginError.style.display = 'block';
+      })
+      .finally(() => {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Ingresar';
+      });
+  }
+
+  loginBtn.addEventListener('click', intentarLogin);
+  document.getElementById('loginPass').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') intentarLogin();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', ()=> auth.signOut());
+})();
 
 /* ============ CONFIG (extraído de Enfoque_Calidad_SVA_OUT_Telecentro.xlsx) ============ */
 const ENC = [
