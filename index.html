@@ -755,15 +755,16 @@ if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PEGAR_AQUI') !== -1){
 }
 
 /* ============ TABS ============ */
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    document.getElementById('view-'+tab.dataset.view).classList.add('active');
-    document.getElementById('scoreBar').style.display = tab.dataset.view === 'evaluar' ? 'block' : 'none';
-    if(tab.dataset.view === 'metricas') loadMetrics();
-  });
+function switchToView(viewName){
+  document.querySelectorAll('.tab[data-view]').forEach(t=>t.classList.toggle('active', t.dataset.view === viewName));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+viewName).classList.add('active');
+  document.getElementById('scoreBar').style.display = viewName === 'evaluar' ? 'block' : 'none';
+  if(viewName === 'metricas') loadMetrics();
+}
+
+document.querySelectorAll('.tab[data-view]').forEach(tab=>{
+  tab.addEventListener('click', ()=> switchToView(tab.dataset.view));
 });
 
 /* ============ TOAST ============ */
@@ -862,6 +863,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     if(data && data.ok){
       showToast('Evaluación guardada ✓');
       resetForm();
+      switchToView('metricas');
     } else {
       showToast('No se pudo guardar. Probá de nuevo.');
     }
