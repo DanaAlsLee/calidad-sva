@@ -545,8 +545,9 @@ const auth = firebase.auth();
     loginBtn.disabled = true;
     loginBtn.textContent = 'Ingresando...';
     auth.signInWithEmailAndPassword(email, pass)
-      .catch(() => {
-        loginError.textContent = 'Usuario o clave incorrectos.';
+      .catch((err) => {
+        console.error('Error de login Firebase:', err);
+        loginError.textContent = 'Error (' + (err && err.code ? err.code : 'desconocido') + '): ' + (err && err.message ? err.message : 'no se pudo iniciar sesión');
         loginError.style.display = 'block';
       })
       .finally(() => {
