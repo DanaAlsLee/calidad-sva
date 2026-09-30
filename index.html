@@ -408,19 +408,25 @@
   .detail-row span:last-child{ text-align:right; font-weight:600; }
 
   .sheet-link{
-    display:inline-flex;
+    display:flex;
     align-items:center;
-    gap:6px;
-    background:var(--ok-bg);
-    color:var(--ok);
-    border:1px solid var(--ok);
-    border-radius:8px;
-    padding:8px 12px;
-    font-size:.8rem;
+    justify-content:center;
+    gap:8px;
+    background:var(--ok);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:13px 16px;
+    font-size:.9rem;
     font-weight:700;
     text-decoration:none;
     white-space:nowrap;
+    margin-bottom:14px;
+    box-shadow:0 2px 6px rgba(46,139,111,.25);
   }
+  .sheet-link:active{ background:#256F58; }
+  .sheet-link-icon{ font-size:1.5rem; line-height:1; }
+  .sheet-link-arrow{ font-size:1.1rem; line-height:1; }
 </style>
 </head>
 <body>
@@ -468,14 +474,14 @@
       <div class="grid2">
         <div class="field">
           <label>Evaluador/a</label>
-          <select id="fEvaluador" required>
+          <select id="fEvaluador" required autocomplete="off">
             <option value="">Seleccionar...</option>
             <option value="Tantucci Mariano">Tantucci Mariano</option>
           </select>
         </div>
         <div class="field">
           <label>Asesor/a evaluado/a</label>
-          <select id="fAsesor" required>
+          <select id="fAsesor" required autocomplete="off">
             <option value="Barrega Flavia Alejandra">Barrega Flavia Alejandra</option>
             <option value="Bertolini Patricia">Bertolini Patricia</option>
             <option value="Carnez  Juan Martin">Carnez  Juan Martin</option>
@@ -539,6 +545,8 @@
 
   <!-- ===================== METRICAS ===================== -->
   <section id="view-metricas" class="view">
+    <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink"><span class="sheet-link-icon">🟩📊</span> Ver ficha original en Google Sheets <span class="sheet-link-arrow">↗</span></a>
+
     <div class="filter-row">
       <div class="filter-group">
         <div class="filter-field">
@@ -555,7 +563,6 @@
         </div>
         <button type="button" class="filter-clear" id="filterClearBtn">Limpiar filtros</button>
       </div>
-      <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink">📄 Ver planilla completa en Google Sheets ↗</a>
     </div>
 
     <div class="metric-summary" id="metricSummary"></div>
@@ -856,6 +863,11 @@ document.querySelectorAll('.err-motivo').forEach(sel=>{
     refreshScoreBar();
   });
 });
+
+// Algunos navegadores restauran el último valor elegido en los <select> al recargar la página.
+// Forzamos que arranquen vacíos siempre.
+document.getElementById('fEvaluador').selectedIndex = 0;
+document.getElementById('fAsesor').selectedIndex = 0;
 
 refreshScoreBar();
 
@@ -1189,6 +1201,19 @@ function renderMetrics(records, filtro){
   renderDetailList(data);
 }
 
+function formatFechaHora(value){
+  if(!value) return '—';
+  // Fecha simple sin hora (YYYY-MM-DD), como la ingresa el formulario.
+  if(/^\d{4}-\d{2}-\d{2}$/.test(value)){
+    const [y,m,d] = value.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  // Si Google Sheets la convirtió en fecha/hora completa, mostramos solo fecha y hora locales.
+  const d = new Date(value);
+  if(isNaN(d.getTime())) return escapeHtml(value);
+  return d.toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
 function escapeHtml(str){
   return String(str == null ? '' : str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1240,7 +1265,7 @@ function renderDetailList(data){
           <span>${escapeHtml(r.asesor) || '—'}</span>
           <span>SVA OUT</span>
           <span>${escapeHtml(r.numLlamada) || '—'}</span>
-          <span>${escapeHtml(r.fecha) || '—'}</span>
+          <span>${formatFechaHora(r.fecha)}</span>
           <span class="pill ${pillClass}">${nota.toFixed(1)}</span>
           <span class="dh-chevron">▾</span>
         </div>
