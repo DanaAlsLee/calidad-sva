@@ -340,7 +340,87 @@
     padding:30px 10px;
   }
   select#filterAsesor{ max-width:220px; }
-  .filter-row{ display:flex; justify-content:flex-end; margin-bottom:10px; }
+  .filter-row{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .filter-group{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; }
+  .filter-field{ display:flex; flex-direction:column; gap:3px; }
+  .filter-field label{ font-size:.72rem; font-weight:600; color:var(--ink-soft); }
+  .filter-field input, .filter-field select{
+    padding:8px 9px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:.85rem;
+    font-family:inherit;
+    background:#FBFDFD;
+    color:var(--ink);
+  }
+  .filter-clear{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:.78rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .detail-table-head{
+    display:grid;
+    grid-template-columns: 0.6fr 1.5fr 0.9fr 1.1fr 1.3fr 0.8fr 0.4fr;
+    gap:8px;
+    padding:8px 12px;
+    font-size:.7rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    border-bottom:2px solid var(--line);
+  }
+  .detail-item{
+    border:1px solid var(--line);
+    border-top:none;
+    border-radius:0;
+    margin-bottom:0;
+    overflow:hidden;
+  }
+  .detail-item:first-of-type{ border-top:1px solid var(--line); border-radius:10px 10px 0 0; }
+  .detail-item:last-of-type{ border-radius:0 0 10px 10px; margin-bottom:8px; }
+  .detail-head{
+    display:grid;
+    grid-template-columns: 0.6fr 1.5fr 0.9fr 1.1fr 1.3fr 0.8fr 0.4fr;
+    gap:8px;
+    align-items:center;
+    padding:10px 12px;
+    background:#F6F9F9;
+    cursor:pointer;
+    font-size:.82rem;
+  }
+  .detail-head:hover{ background:#EEF3F3; }
+  .detail-head .dh-chevron{ text-align:right; color:var(--ink-soft); font-size:.75rem; transition:transform .15s ease; }
+  .detail-head.open .dh-chevron{ transform:rotate(180deg); }
+  .detail-body{ display:none; padding:12px; font-size:.82rem; border-top:1px solid var(--line); }
+  .detail-body.open{ display:block; }
+  .detail-section{ margin-bottom:12px; }
+  .detail-section:last-child{ margin-bottom:0; }
+  .detail-section h4{ margin:0 0 6px 0; font-size:.76rem; color:var(--primary-dark); text-transform:uppercase; letter-spacing:.3px; }
+  .detail-section p{ margin:0; color:var(--ink); white-space:pre-line; }
+  .detail-row{ display:flex; justify-content:space-between; gap:10px; padding:4px 0; border-bottom:1px solid #F0F3F3; }
+  .detail-row:last-child{ border-bottom:none; }
+  .detail-row span:first-child{ color:var(--ink-soft); }
+  .detail-row span:last-child{ text-align:right; font-weight:600; }
+
+  .sheet-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--ok-bg);
+    color:var(--ok);
+    border:1px solid var(--ok);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:.8rem;
+    font-weight:700;
+    text-decoration:none;
+    white-space:nowrap;
+  }
 </style>
 </head>
 <body>
@@ -396,7 +476,6 @@
         <div class="field">
           <label>Asesor/a evaluado/a</label>
           <select id="fAsesor" required>
-            <option value="">Seleccionar...</option>
             <option value="Barrega Flavia Alejandra">Barrega Flavia Alejandra</option>
             <option value="Bertolini Patricia">Bertolini Patricia</option>
             <option value="Carnez  Juan Martin">Carnez  Juan Martin</option>
@@ -461,7 +540,22 @@
   <!-- ===================== METRICAS ===================== -->
   <section id="view-metricas" class="view">
     <div class="filter-row">
-      <select id="filterAsesor"><option value="">Todos los asesores</option></select>
+      <div class="filter-group">
+        <div class="filter-field">
+          <label>Desde</label>
+          <input type="date" id="filterDesde">
+        </div>
+        <div class="filter-field">
+          <label>Hasta</label>
+          <input type="date" id="filterHasta">
+        </div>
+        <div class="filter-field">
+          <label>Asesor</label>
+          <select id="filterAsesor"><option value="">Todos los asesores</option></select>
+        </div>
+        <button type="button" class="filter-clear" id="filterClearBtn">Limpiar filtros</button>
+      </div>
+      <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink">📄 Ver planilla completa en Google Sheets ↗</a>
     </div>
 
     <div class="metric-summary" id="metricSummary"></div>
@@ -479,6 +573,14 @@
     <div class="card">
       <h2>Errores críticos más frecuentes</h2>
       <div id="errorBarsBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>Detalle de monitoreos</h2>
+      <p style="font-size:.8rem;color:var(--ink-soft);margin-top:-6px;">
+        Click en un monitoreo para abrir la ficha de la evaluación con las observaciones, fortalezas y oportunidades de mejora.
+      </p>
+      <div id="detailBox"></div>
     </div>
   </section>
 </main>
@@ -511,6 +613,9 @@
 /* ============ CONFIG ============ */
 // Pegá acá la URL de tu Google Apps Script Web App (ver instrucciones de despliegue).
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3ihx33chKMxDXS33P_9KKBSTODmQELB7gTEF3trqvlsfXFIeKaTrFuzcbcSC7QLgAFg/exec";
+
+// Pegá acá la URL de tu Google Sheet (la de la barra de direcciones al abrir la planilla).
+const GOOGLE_SHEET_URL = "PEGAR_AQUI_TU_URL_DE_GOOGLE_SHEETS";
 
 // Pegá acá la config de tu proyecto de Firebase (Configuración del proyecto > tus apps > Config del SDK).
 const firebaseConfig = {
@@ -604,6 +709,7 @@ const ERRORES = [
 /* ============ STATE ============ */
 let encState = ENC.map(() => ({ cumple:'', motivo:'' }));
 let errState = ERRORES.map(() => ({ cumple:'', motivo:'' }));
+let allRecords = [];
 
 /* ============ RENDER FORM ============ */
 const encContainer = document.getElementById('encContainer');
@@ -755,6 +861,13 @@ refreshScoreBar();
 
 if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PEGAR_AQUI') !== -1){
   document.getElementById('configWarning').style.display = 'block';
+}
+
+const sheetLinkEl = document.getElementById('sheetLink');
+if(!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.indexOf('PEGAR_AQUI') !== -1){
+  sheetLinkEl.style.display = 'none';
+} else {
+  sheetLinkEl.href = GOOGLE_SHEET_URL;
 }
 
 /* ============ TABS ============ */
@@ -917,7 +1030,7 @@ async function loadMetrics(){
     // encPorAtributo y erroresDetectados viajan como texto JSON dentro de la celda; se parsean de nuevo acá.
     records = (data.records || []).map(r=>{
       const rec = { ...r };
-      ['encPorAtributo','erroresDetectados'].forEach(field=>{
+      ['encPorAtributo','errPorAtributo','erroresDetectados'].forEach(field=>{
         if(typeof rec[field] === 'string'){
           try{ rec[field] = JSON.parse(rec[field]); }catch(e){ rec[field] = []; }
         }
@@ -935,6 +1048,11 @@ async function loadMetrics(){
     return;
   }
 
+  // ID de monitoreo: número secuencial estable según el orden en que se guardaron las filas en la planilla.
+  records.forEach((r, idx)=>{ r.monitoreoId = idx + 1; });
+
+  allRecords = records;
+
   // poblar filtro de asesores
   const asesores = Array.from(new Set(records.map(r=>r.asesor))).sort();
   const sel = document.getElementById('filterAsesor');
@@ -942,12 +1060,41 @@ async function loadMetrics(){
   sel.innerHTML = '<option value="">Todos los asesores</option>' + asesores.map(a=>`<option value="${a}">${a}</option>`).join('');
   sel.value = prevVal;
 
-  renderMetrics(records, sel.value);
-  sel.onchange = ()=> renderMetrics(records, sel.value);
+  applyMetricFilters();
+
+  sel.onchange = applyMetricFilters;
+  document.getElementById('filterDesde').oninput = applyMetricFilters;
+  document.getElementById('filterHasta').oninput = applyMetricFilters;
+  document.getElementById('filterClearBtn').onclick = ()=>{
+    document.getElementById('filterDesde').value = '';
+    document.getElementById('filterHasta').value = '';
+    sel.value = '';
+    applyMetricFilters();
+  };
+}
+
+function applyMetricFilters(){
+  const filtro = {
+    asesor: document.getElementById('filterAsesor').value,
+    desde: document.getElementById('filterDesde').value,
+    hasta: document.getElementById('filterHasta').value
+  };
+  renderMetrics(allRecords, filtro);
 }
 
 function renderMetrics(records, filtro){
-  const data = filtro ? records.filter(r=>r.asesor === filtro) : records;
+  filtro = filtro || {};
+  const { asesor, desde, hasta } = filtro;
+
+  const enRango = (r)=>{
+    if(!r.fecha) return true;
+    if(desde && r.fecha < desde) return false;
+    if(hasta && r.fecha > hasta) return false;
+    return true;
+  };
+
+  const porFecha = records.filter(enRango);
+  const data = asesor ? porFecha.filter(r=>r.asesor === asesor) : porFecha;
 
   const box = document.getElementById('metricSummary');
   if(data.length === 0){
@@ -955,6 +1102,7 @@ function renderMetrics(records, filtro){
     document.getElementById('rankingBox').innerHTML='';
     document.getElementById('attrBarsBox').innerHTML='';
     document.getElementById('errorBarsBox').innerHTML='';
+    document.getElementById('detailBox').innerHTML='';
     return;
   }
 
@@ -970,9 +1118,9 @@ function renderMetrics(records, filtro){
     <div class="metric-box"><div class="num">${pctError.toFixed(0)}%</div><div class="lbl">% con cero absoluto</div></div>
   `;
 
-  // ranking por asesor (siempre sobre el set completo, sin filtrar por sí mismo)
+  // ranking por asesor (respeta el rango de fechas, no el filtro por asesor)
   const porAsesor = {};
-  records.forEach(r=>{
+  porFecha.forEach(r=>{
     if(!porAsesor[r.asesor]) porAsesor[r.asesor] = [];
     porAsesor[r.asesor].push(r.notaFinal);
   });
@@ -1037,6 +1185,100 @@ function renderMetrics(records, filtro){
       <div class="bar-track"><div class="bar-fill crit" style="width:${(count/maxCount)*100}%"></div></div>
     </div>
   `).join('') : '<div class="empty-note">Sin errores críticos registrados en este filtro.</div>';
+
+  renderDetailList(data);
+}
+
+function escapeHtml(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderDetailList(data){
+  const box = document.getElementById('detailBox');
+  if(!data.length){
+    box.innerHTML = '<div class="empty-note">Sin monitoreos para este filtro.</div>';
+    return;
+  }
+
+  const ordenado = [...data].sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||'') || (b.guardadoEn||'').localeCompare(a.guardadoEn||''));
+
+  const header = `
+    <div class="detail-table-head">
+      <span>ID</span>
+      <span>Operador</span>
+      <span>Servicio</span>
+      <span>Id_grabación</span>
+      <span>Fecha Monitoreo</span>
+      <span>Puntaje</span>
+      <span></span>
+    </div>
+  `;
+
+  const rows = ordenado.map((r, i)=>{
+    const nota = Number(r.notaFinal) || 0;
+    const pillClass = nota >= 85 ? 'ok' : (nota >= 70 ? 'warn' : 'crit');
+
+    const encRows = (r.encPorAtributo || []).map(e => `
+      <div class="detail-row">
+        <span>${escapeHtml(e.attr)}</span>
+        <span style="color:${e.cumple==='1' ? 'var(--ok)' : 'var(--crit)'}">${e.cumple==='1' ? '✅ Cumple' : ('❌ ' + escapeHtml(e.motivo || 'No cumple'))}</span>
+      </div>
+    `).join('');
+
+    const errRows = (r.errPorAtributo || []).map(e => `
+      <div class="detail-row">
+        <span>${escapeHtml(e.tipo)} · ${escapeHtml(e.attr)}</span>
+        <span style="color:${e.cumple==='1' ? 'var(--ok)' : 'var(--crit)'}">${e.cumple==='1' ? '✅ Sin error' : ('🔥 ' + escapeHtml(e.motivo || 'Error sin motivo especificado'))}</span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="detail-item">
+        <div class="detail-head" data-detail-toggle="${i}">
+          <span>${r.monitoreoId != null ? r.monitoreoId : '—'}</span>
+          <span>${escapeHtml(r.asesor) || '—'}</span>
+          <span>SVA OUT</span>
+          <span>${escapeHtml(r.numLlamada) || '—'}</span>
+          <span>${escapeHtml(r.fecha) || '—'}</span>
+          <span class="pill ${pillClass}">${nota.toFixed(1)}</span>
+          <span class="dh-chevron">▾</span>
+        </div>
+        <div class="detail-body" id="detail-body-${i}">
+          <div class="detail-section">
+            <h4>Observaciones</h4>
+            <p>${escapeHtml(r.comentarios) || '—'}</p>
+          </div>
+          <div class="detail-section">
+            <h4>Fortalezas</h4>
+            <p>${escapeHtml(r.fortalezas) || '—'}</p>
+          </div>
+          <div class="detail-section">
+            <h4>Oportunidades de mejora</h4>
+            <p>${escapeHtml(r.oportunidadesMejora) || '—'}</p>
+          </div>
+          <div class="detail-section">
+            <h4>Errores no críticos (ENC)</h4>
+            ${encRows || '<p>Sin datos.</p>'}
+          </div>
+          <div class="detail-section">
+            <h4>Errores críticos (ECNEG / ECUF)</h4>
+            ${errRows || '<p>Sin datos.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  box.innerHTML = header + rows;
+
+  document.querySelectorAll('[data-detail-toggle]').forEach(head=>{
+    head.addEventListener('click', ()=>{
+      const id = head.getAttribute('data-detail-toggle');
+      head.classList.toggle('open');
+      document.getElementById('detail-body-'+id).classList.toggle('open');
+    });
+  });
 }
 </script>
 </body>
