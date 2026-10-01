@@ -421,7 +421,7 @@
     font-weight:700;
     text-decoration:none;
     white-space:nowrap;
-    margin-bottom:14px;
+    margin-top:2px;
     box-shadow:0 2px 6px rgba(46,139,111,.25);
   }
   .sheet-link:active{ background:#256F58; }
@@ -509,7 +509,6 @@
             <option value="Ratto Manfredi Jesica Micaela">Ratto Manfredi Jesica Micaela</option>
             <option value="Schmeil Candela Grisel">Schmeil Candela Grisel</option>
             <option value="Zaragoza Julian Alfredo">Zaragoza Julian Alfredo</option>
-
           </select>
         </div>
       </div>
@@ -560,21 +559,6 @@
 
   <!-- ===================== METRICAS ===================== -->
   <section id="view-metricas" class="view">
-    <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink">
-      <span class="sheet-link-icon">
-        <svg viewBox="0 0 48 48" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
-          <rect x="6" y="4" width="36" height="40" rx="4" fill="#ffffff"/>
-          <rect x="6" y="4" width="36" height="40" rx="4" fill="#188038" fill-opacity="0.12"/>
-          <rect x="11" y="9" width="26" height="30" rx="1.5" fill="#ffffff" stroke="#188038" stroke-width="2"/>
-          <line x1="11" y1="18" x2="37" y2="18" stroke="#188038" stroke-width="2"/>
-          <line x1="11" y1="27" x2="37" y2="27" stroke="#188038" stroke-width="2"/>
-          <line x1="20.3" y1="9" x2="20.3" y2="39" stroke="#188038" stroke-width="2"/>
-          <line x1="27.7" y1="9" x2="27.7" y2="39" stroke="#188038" stroke-width="2"/>
-        </svg>
-      </span>
-      Ver ficha original en Google Sheets <span class="sheet-link-arrow">↗</span>
-    </a>
-
     <div class="filter-row">
       <div class="filter-group">
         <div class="filter-field">
@@ -598,6 +582,14 @@
     <div class="card">
       <h2>Ranking por asesor</h2>
       <div id="rankingBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>Calidad Reporte de PENC / PECNEG / PECUF</h2>
+      <p style="font-size:.8rem;color:var(--ink-soft);margin-top:-6px;">
+        Promedio por tipo de error: Error No Crítico (PENC), Error Crítico en Negocio (PECNEG) y Error Crítico en Usuario Final (PECUF).
+      </p>
+      <div id="pencReportBox"></div>
     </div>
 
     <div class="card">
@@ -629,6 +621,21 @@
       </p>
       <div id="detailBox"></div>
     </div>
+
+    <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink">
+      <span class="sheet-link-icon">
+        <svg viewBox="0 0 48 48" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="4" width="36" height="40" rx="4" fill="#ffffff"/>
+          <rect x="6" y="4" width="36" height="40" rx="4" fill="#188038" fill-opacity="0.12"/>
+          <rect x="11" y="9" width="26" height="30" rx="1.5" fill="#ffffff" stroke="#188038" stroke-width="2"/>
+          <line x1="11" y1="18" x2="37" y2="18" stroke="#188038" stroke-width="2"/>
+          <line x1="11" y1="27" x2="37" y2="27" stroke="#188038" stroke-width="2"/>
+          <line x1="20.3" y1="9" x2="20.3" y2="39" stroke="#188038" stroke-width="2"/>
+          <line x1="27.7" y1="9" x2="27.7" y2="39" stroke="#188038" stroke-width="2"/>
+        </svg>
+      </span>
+      Ver ficha original en Google Sheets <span class="sheet-link-arrow">↗</span>
+    </a>
   </section>
 </main>
 
@@ -1158,6 +1165,7 @@ function renderMetrics(records, filtro){
     document.getElementById('attrBarsBox').innerHTML='';
     document.getElementById('errorBarsBox').innerHTML='';
     document.getElementById('detailBox').innerHTML='';
+    document.getElementById('pencReportBox').innerHTML='';
     return;
   }
 
@@ -1242,6 +1250,84 @@ function renderMetrics(records, filtro){
   `).join('') : '<div class="empty-note">Sin errores críticos registrados en este filtro.</div>';
 
   renderDetailList(data);
+  renderPencReport(porFecha);
+}
+
+/* ============ REPORTE PENC / PECNEG / PECUF ============ */
+function calcularPencStats(registros){
+  const totalPenc = registros.length
+    ? registros.reduce((s,r)=> s + (Number(r.notaBase) || 0), 0) / registros.length
+    : 0;
+
+  let ecnegOk = 0, ecnegTotal = 0, ecufOk = 0, ecufTotal = 0;
+  registros.forEach(r=>{
+    (r.errPorAtributo || []).forEach(e=>{
+      if(e.tipo === 'ECNEG'){
+        ecnegTotal++;
+        if(e.cumple === '1') ecnegOk++;
+      } else if(e.tipo === 'ECUF'){
+        ecufTotal++;
+        if(e.cumple === '1') ecufOk++;
+      }
+    });
+  });
+
+  return {
+    penc: totalPenc,
+    pecneg: ecnegTotal ? (ecnegOk/ecnegTotal)*100 : null,
+    pecuf: ecufTotal ? (ecufOk/ecufTotal)*100 : null,
+    qMonitoreo: registros.length
+  };
+}
+
+function renderPencReport(porFecha){
+  const box = document.getElementById('pencReportBox');
+  if(!porFecha.length){
+    box.innerHTML = '<div class="empty-note">Sin monitoreos para este filtro.</div>';
+    return;
+  }
+
+  const equipo = calcularPencStats(porFecha);
+
+  const porAsesor = {};
+  porFecha.forEach(r=>{
+    if(!porAsesor[r.asesor]) porAsesor[r.asesor] = [];
+    porAsesor[r.asesor].push(r);
+  });
+  const filas = Object.entries(porAsesor)
+    .map(([nombre, registros]) => ({ nombre, ...calcularPencStats(registros) }))
+    .sort((a,b)=> a.nombre.localeCompare(b.nombre));
+
+  const fmtPct = (v) => v == null ? '—' : v.toFixed(2) + '%';
+
+  box.innerHTML = `
+    <table class="rank" style="margin-bottom:16px;">
+      <thead><tr><th>Equipo</th><th>PENC</th><th>PECNEG</th><th>PECUF</th><th>Q Monitoreo</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Total equipo</td>
+          <td>${equipo.penc.toFixed(2)}</td>
+          <td>${fmtPct(equipo.pecneg)}</td>
+          <td>${fmtPct(equipo.pecuf)}</td>
+          <td>${equipo.qMonitoreo}</td>
+        </tr>
+      </tbody>
+    </table>
+    <table class="rank">
+      <thead><tr><th>Asesor</th><th>PENC</th><th>PECNEG</th><th>PECUF</th><th>Q Monitoreo</th></tr></thead>
+      <tbody>
+        ${filas.map(f=>`
+          <tr>
+            <td>${escapeHtml(f.nombre)}</td>
+            <td>${f.penc.toFixed(2)}</td>
+            <td>${fmtPct(f.pecneg)}</td>
+            <td>${fmtPct(f.pecuf)}</td>
+            <td>${f.qMonitoreo}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
 }
 
 function formatFechaHora(value){
