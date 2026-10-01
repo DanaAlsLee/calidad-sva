@@ -425,8 +425,21 @@
     box-shadow:0 2px 6px rgba(46,139,111,.25);
   }
   .sheet-link:active{ background:#256F58; }
-  .sheet-link-icon{ font-size:1.5rem; line-height:1; }
+  .sheet-link-icon{ display:inline-flex; line-height:1; }
+  .sheet-link-icon svg{ display:block; }
   .sheet-link-arrow{ font-size:1.1rem; line-height:1; }
+  .card h2{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .sheet-icon-link{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:30px; height:30px;
+    border-radius:8px;
+    background:var(--ok-bg);
+    border:1px solid var(--ok);
+    flex-shrink:0;
+  }
+  .sheet-icon-link svg{ display:block; }
 </style>
 </head>
 <body>
@@ -482,6 +495,7 @@
         <div class="field">
           <label>Asesor/a evaluado/a</label>
           <select id="fAsesor" required autocomplete="off">
+            <option value="">Seleccionar...</option>
             <option value="Barrega Flavia Alejandra">Barrega Flavia Alejandra</option>
             <option value="Bertolini Patricia">Bertolini Patricia</option>
             <option value="Carnez  Juan Martin">Carnez  Juan Martin</option>
@@ -495,6 +509,7 @@
             <option value="Ratto Manfredi Jesica Micaela">Ratto Manfredi Jesica Micaela</option>
             <option value="Schmeil Candela Grisel">Schmeil Candela Grisel</option>
             <option value="Zaragoza Julian Alfredo">Zaragoza Julian Alfredo</option>
+
           </select>
         </div>
       </div>
@@ -545,7 +560,20 @@
 
   <!-- ===================== METRICAS ===================== -->
   <section id="view-metricas" class="view">
-    <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink"><span class="sheet-link-icon">🟩📊</span> Ver ficha original en Google Sheets <span class="sheet-link-arrow">↗</span></a>
+    <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink">
+      <span class="sheet-link-icon">
+        <svg viewBox="0 0 48 48" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="4" width="36" height="40" rx="4" fill="#ffffff"/>
+          <rect x="6" y="4" width="36" height="40" rx="4" fill="#188038" fill-opacity="0.12"/>
+          <rect x="11" y="9" width="26" height="30" rx="1.5" fill="#ffffff" stroke="#188038" stroke-width="2"/>
+          <line x1="11" y1="18" x2="37" y2="18" stroke="#188038" stroke-width="2"/>
+          <line x1="11" y1="27" x2="37" y2="27" stroke="#188038" stroke-width="2"/>
+          <line x1="20.3" y1="9" x2="20.3" y2="39" stroke="#188038" stroke-width="2"/>
+          <line x1="27.7" y1="9" x2="27.7" y2="39" stroke="#188038" stroke-width="2"/>
+        </svg>
+      </span>
+      Ver ficha original en Google Sheets <span class="sheet-link-arrow">↗</span>
+    </a>
 
     <div class="filter-row">
       <div class="filter-group">
@@ -583,7 +611,19 @@
     </div>
 
     <div class="card">
-      <h2>Detalle de monitoreos</h2>
+      <h2>
+        Detalle de monitoreos
+        <a href="#" target="_blank" rel="noopener" class="sheet-icon-link" id="sheetIconLink" title="Ver datos crudos en Google Sheets">
+          <svg viewBox="0 0 48 48" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="4" width="36" height="40" rx="4" fill="#188038" fill-opacity="0.12"/>
+            <rect x="11" y="9" width="26" height="30" rx="1.5" fill="#ffffff" stroke="#188038" stroke-width="2"/>
+            <line x1="11" y1="18" x2="37" y2="18" stroke="#188038" stroke-width="2"/>
+            <line x1="11" y1="27" x2="37" y2="27" stroke="#188038" stroke-width="2"/>
+            <line x1="20.3" y1="9" x2="20.3" y2="39" stroke="#188038" stroke-width="2"/>
+            <line x1="27.7" y1="9" x2="27.7" y2="39" stroke="#188038" stroke-width="2"/>
+          </svg>
+        </a>
+      </h2>
       <p style="font-size:.8rem;color:var(--ink-soft);margin-top:-6px;">
         Click en un monitoreo para abrir la ficha de la evaluación con las observaciones, fortalezas y oportunidades de mejora.
       </p>
@@ -622,7 +662,7 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3ihx33chKMxDXS33P_9KKBSTODmQELB7gTEF3trqvlsfXFIeKaTrFuzcbcSC7QLgAFg/exec";
 
 // Pegá acá la URL de tu Google Sheet (la de la barra de direcciones al abrir la planilla).
-const GOOGLE_SHEET_URL = "PEGAR_AQUI_TU_URL_DE_GOOGLE_SHEETS";
+const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1hBlJ8qce5urq-ITEh-ZLL8MkYBGJQILOmYadvDrvex4/edit?gid=0#gid=0";
 
 // Pegá acá la config de tu proyecto de Firebase (Configuración del proyecto > tus apps > Config del SDK).
 const firebaseConfig = {
@@ -876,10 +916,13 @@ if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PEGAR_AQUI') !== -1){
 }
 
 const sheetLinkEl = document.getElementById('sheetLink');
+const sheetIconLinkEl = document.getElementById('sheetIconLink');
 if(!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.indexOf('PEGAR_AQUI') !== -1){
   sheetLinkEl.style.display = 'none';
+  sheetIconLinkEl.style.display = 'none';
 } else {
   sheetLinkEl.href = GOOGLE_SHEET_URL;
+  sheetIconLinkEl.href = GOOGLE_SHEET_URL;
 }
 
 /* ============ TABS ============ */
