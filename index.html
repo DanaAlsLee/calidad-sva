@@ -1,1443 +1,233 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calidad SVA OUT · Telecentro</title>
+<html lang="es"><head><meta charset="utf-8"><title>TEAM LEE · CRM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
-  :root{
-    --bg:#EEF2F2;
-    --panel:#FFFFFF;
-    --ink:#122328;
-    --ink-soft:#54696E;
-    --line:#DCE4E4;
-    --primary:#154A52;
-    --primary-dark:#0E363C;
-    --ok:#2E8B6F;
-    --ok-bg:#E4F3EC;
-    --warn:#C77B22;
-    --warn-bg:#FBEEDD;
-    --crit:#B23A2E;
-    --crit-bg:#F8E4E0;
-    --radius:14px;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height:1.45;
-    padding-bottom:110px;
-  }
-  .topbar{
-    background:var(--primary-dark);
-    color:#fff;
-    padding:18px 16px 0 16px;
-    position:sticky; top:0; z-index:30;
-  }
-  .topbar h1{
-    margin:0 0 2px 0;
-    font-size:1.2rem;
-    font-weight:700;
-    letter-spacing:.2px;
-  }
-  .topbar p{
-    margin:0 0 14px 0;
-    font-size:.82rem;
-    color:#B9D2CD;
-  }
-  .tabs{ display:flex; gap:4px; }
-  .tab{
-    flex:1;
-    text-align:center;
-    padding:10px 8px;
-    background:transparent;
-    border:none;
-    color:#B9D2CD;
-    font-size:.88rem;
-    font-weight:600;
-    cursor:pointer;
-    border-bottom:3px solid transparent;
-  }
-  .tab.active{
-    color:#fff;
-    border-bottom:3px solid #5AB9A3;
-  }
-  main{
-    max-width:760px;
-    margin:0 auto;
-    padding:16px;
-  }
-  .view{ display:none; }
-  .view.active{ display:block; }
-
-  .card{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:16px;
-    margin-bottom:14px;
-  }
-  .card h2{
-    margin:0 0 12px 0;
-    font-size:1rem;
-    font-weight:700;
-    color:var(--primary-dark);
-  }
-  .field{ margin-bottom:12px; }
-  .field label{
-    display:block;
-    font-size:.78rem;
-    font-weight:600;
-    color:var(--ink-soft);
-    margin-bottom:4px;
-  }
-  .field input, .field textarea, .field select{
-    width:100%;
-    padding:10px 11px;
-    border:1px solid var(--line);
-    border-radius:9px;
-    font-size:.92rem;
-    font-family:inherit;
-    background:#FBFDFD;
-    color:var(--ink);
-  }
-  .field textarea{ resize:vertical; min-height:60px; }
-  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  @media (max-width:480px){ .grid2{ grid-template-columns:1fr; } }
-
-  .attr-block{
-    border:1px solid var(--line);
-    border-left:4px solid var(--primary);
-    border-radius:12px;
-    margin-bottom:10px;
-    overflow:hidden;
-  }
-  .attr-block:has(.attr-head.err){
-    border-left-color:var(--warn);
-  }
-  .attr-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:10px 12px;
-    background:#F6F9F9;
-    cursor:pointer;
-  }
-  .attr-head.err{ background:#FBF3EF; }
-  .attr-title{ display:flex; align-items:center; gap:8px; }
-  .attr-title span.name{ font-weight:800; font-size:.98rem; color:var(--primary-dark); letter-spacing:.1px; }
-  .badge{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-width:34px;
-    padding:2px 6px;
-    border-radius:20px;
-    font-size:.72rem;
-    font-weight:700;
-    background:var(--primary);
-    color:#fff;
-  }
-  .badge.tag{
-    background:#E7ECEC;
-    color:var(--ink-soft);
-    font-weight:700;
-  }
-  .info-toggle{
-    border:none;
-    background:none;
-    color:var(--ink-soft);
-    font-size:.85rem;
-    cursor:pointer;
-    width:22px; height:22px;
-    border-radius:50%;
-    border:1px solid var(--line);
-  }
-  .attr-desc{
-    display:none;
-    padding:10px 12px;
-    font-size:.8rem;
-    color:var(--ink-soft);
-    background:#F6F9F9;
-    white-space:pre-line;
-    border-top:1px dashed var(--line);
-  }
-  .attr-desc.open{ display:block; }
-  .attr-items{ padding:8px 12px 12px 12px; }
-  .check-row{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    padding:8px 4px;
-    border-bottom:1px solid #F0F3F3;
-    font-size:.88rem;
-    cursor:pointer;
-  }
-  .check-row:last-child{ border-bottom:none; }
-  .check-row input{ margin-top:3px; width:17px; height:17px; flex-shrink:0; }
-  .check-row.error-row input{ accent-color:var(--crit); }
-  .check-row input{ accent-color:var(--ok); }
-
-  .attr-select-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 12px;
-  }
-  .attr-select-row select{
-    flex:1;
-    min-width:0;
-    padding:9px 8px;
-    border:1px solid var(--line);
-    border-radius:8px;
-    font-size:.86rem;
-    font-family:inherit;
-    background:#FBFDFD;
-    color:var(--ink);
-  }
-  .attr-select-row select.motivo-select:disabled{
-    background:#F1F3F3;
-    color:#9AA6A8;
-  }
-  .attr-select-row select.required-missing{
-    border-color:var(--crit);
-  }
-  .tag-status{
-    display:flex;
-    align-items:center;
-    gap:4px;
-    font-size:.76rem;
-    font-weight:700;
-    color:var(--ink-soft);
-    white-space:nowrap;
-    flex:0 0 auto;
-  }
-  .tag-status .icon{ font-size:.95rem; }
-
-  .score-bar{
-    position:fixed;
-    bottom:0; left:0; right:0;
-    background:var(--panel);
-    border-top:1px solid var(--line);
-    box-shadow:0 -4px 14px rgba(0,0,0,.06);
-    padding:10px 14px;
-    z-index:40;
-  }
-  .score-row{
-    max-width:760px;
-    margin:0 auto;
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-  .score-metric{
-    flex:1;
-    text-align:center;
-  }
-  .score-metric .num{
-    font-size:1.25rem;
-    font-weight:800;
-    line-height:1;
-  }
-  .score-metric .lbl{
-    font-size:.68rem;
-    color:var(--ink-soft);
-    text-transform:none;
-    margin-top:2px;
-  }
-  .save-btn{
-    flex:1.3;
-    background:var(--primary);
-    color:#fff;
-    border:none;
-    border-radius:10px;
-    padding:13px 10px;
-    font-size:.9rem;
-    font-weight:700;
-    cursor:pointer;
-  }
-  .save-btn:active{ background:var(--primary-dark); }
-  .save-btn:disabled{ opacity:.5; }
-
-  .pill{
-    display:inline-block;
-    padding:2px 10px;
-    border-radius:20px;
-    font-size:.76rem;
-    font-weight:700;
-  }
-  .pill.ok{ background:var(--ok-bg); color:var(--ok); }
-  .pill.warn{ background:var(--warn-bg); color:var(--warn); }
-  .pill.crit{ background:var(--crit-bg); color:var(--crit); }
-
-  .toast{
-    position:fixed;
-    top:16px; left:50%; transform:translateX(-50%);
-    background:var(--primary-dark);
-    color:#fff;
-    padding:10px 18px;
-    border-radius:30px;
-    font-size:.85rem;
-    z-index:60;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .25s ease, top .25s ease;
-  }
-  .toast.show{ opacity:1; top:26px; }
-
-  .metric-summary{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:10px;
-    margin-bottom:14px;
-  }
-  .metric-box{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:12px;
-    text-align:center;
-  }
-  .metric-box .num{ font-size:1.4rem; font-weight:800; color:var(--primary-dark); }
-  .metric-box .lbl{ font-size:.72rem; color:var(--ink-soft); margin-top:2px; }
-
-  table.rank{
-    width:100%;
-    border-collapse:collapse;
-    font-size:.84rem;
-  }
-  table.rank th, table.rank td{
-    text-align:left;
-    padding:8px 6px;
-    border-bottom:1px solid #F0F3F3;
-  }
-  table.rank th{ color:var(--ink-soft); font-size:.72rem; font-weight:700; }
-
-  .bar-row{ margin-bottom:10px; }
-  .bar-row .bar-label{
-    display:flex; justify-content:space-between;
-    font-size:.8rem; margin-bottom:3px;
-  }
-  .bar-track{
-    background:#E7ECEC;
-    border-radius:6px;
-    height:9px;
-    overflow:hidden;
-  }
-  .bar-fill{
-    height:100%;
-    border-radius:6px;
-    background:var(--primary);
-  }
-  .bar-fill.crit{ background:var(--crit); }
-
-  .empty-note{
-    text-align:center;
-    color:var(--ink-soft);
-    font-size:.85rem;
-    padding:30px 10px;
-  }
-  select#filterAsesor{ max-width:220px; }
-  .filter-row{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom:14px; }
-  .filter-group{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; }
-  .filter-field{ display:flex; flex-direction:column; gap:3px; }
-  .filter-field label{ font-size:.72rem; font-weight:600; color:var(--ink-soft); }
-  .filter-field input, .filter-field select{
-    padding:8px 9px;
-    border:1px solid var(--line);
-    border-radius:8px;
-    font-size:.85rem;
-    font-family:inherit;
-    background:#FBFDFD;
-    color:var(--ink);
-  }
-  .filter-clear{
-    background:none;
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:8px 12px;
-    font-size:.78rem;
-    color:var(--ink-soft);
-    cursor:pointer;
-  }
-  .detail-table-head{
-    display:grid;
-    grid-template-columns: 0.6fr 1.5fr 0.9fr 1.1fr 1.3fr 0.8fr 0.4fr;
-    gap:8px;
-    padding:8px 12px;
-    font-size:.7rem;
-    font-weight:700;
-    color:var(--ink-soft);
-    text-transform:uppercase;
-    letter-spacing:.3px;
-    border-bottom:2px solid var(--line);
-  }
-  .detail-item{
-    border:1px solid var(--line);
-    border-top:none;
-    border-radius:0;
-    margin-bottom:0;
-    overflow:hidden;
-  }
-  .detail-item:first-of-type{ border-top:1px solid var(--line); border-radius:10px 10px 0 0; }
-  .detail-item:last-of-type{ border-radius:0 0 10px 10px; margin-bottom:8px; }
-  .detail-head{
-    display:grid;
-    grid-template-columns: 0.6fr 1.5fr 0.9fr 1.1fr 1.3fr 0.8fr 0.4fr;
-    gap:8px;
-    align-items:center;
-    padding:10px 12px;
-    background:#F6F9F9;
-    cursor:pointer;
-    font-size:.82rem;
-  }
-  .detail-head:hover{ background:#EEF3F3; }
-  .detail-head .dh-chevron{ text-align:right; color:var(--ink-soft); font-size:.75rem; transition:transform .15s ease; }
-  .detail-head.open .dh-chevron{ transform:rotate(180deg); }
-  .detail-body{ display:none; padding:12px; font-size:.82rem; border-top:1px solid var(--line); }
-  .detail-body.open{ display:block; }
-  .detail-section{ margin-bottom:12px; }
-  .detail-section:last-child{ margin-bottom:0; }
-  .detail-section h4{ margin:0 0 6px 0; font-size:.76rem; color:var(--primary-dark); text-transform:uppercase; letter-spacing:.3px; }
-  .detail-section p{ margin:0; color:var(--ink); white-space:pre-line; }
-  .detail-row{ display:flex; justify-content:space-between; gap:10px; padding:4px 0; border-bottom:1px solid #F0F3F3; }
-  .detail-row:last-child{ border-bottom:none; }
-  .detail-row span:first-child{ color:var(--ink-soft); }
-  .detail-row span:last-child{ text-align:right; font-weight:600; }
-
-  .sheet-link{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    background:var(--ok);
-    color:#fff;
-    border:none;
-    border-radius:10px;
-    padding:13px 16px;
-    font-size:.9rem;
-    font-weight:700;
-    text-decoration:none;
-    white-space:nowrap;
-    margin-top:2px;
-    box-shadow:0 2px 6px rgba(46,139,111,.25);
-  }
-  .sheet-link:active{ background:#256F58; }
-  .sheet-link-icon{ display:inline-flex; line-height:1; }
-  .sheet-link-icon svg{ display:block; }
-  .sheet-link-arrow{ font-size:1.1rem; line-height:1; }
-  .card h2{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .sheet-icon-link{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:30px; height:30px;
-    border-radius:8px;
-    background:var(--ok-bg);
-    border:1px solid var(--ok);
-    flex-shrink:0;
-  }
-  .sheet-icon-link svg{ display:block; }
-</style>
-</head>
-<body>
-
-<div id="loginScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--primary-dark);padding:20px;">
-  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;">
-    <h1 style="margin:0 0 4px 0;font-size:1.15rem;color:var(--primary-dark);">Calidad SVA OUT</h1>
-    <p style="margin:0 0 18px 0;font-size:.8rem;color:var(--ink-soft);">Ingresá tu usuario y clave para continuar</p>
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="loginUser" autocomplete="username">
-    </div>
-    <div class="field">
-      <label>Clave</label>
-      <input type="password" id="loginPass" autocomplete="current-password">
-    </div>
-    <div id="loginError" style="display:none;color:var(--crit);font-size:.8rem;margin-bottom:10px;">Usuario o clave incorrectos.</div>
-    <button id="loginBtn" class="save-btn" style="width:100%;">Ingresar</button>
-  </div>
-</div>
-
-<div id="appContent" style="display:none;">
-
-<div class="topbar">
-  <h1>Calidad SVA OUT</h1>
-  <p>Telecentro · Evaluación de llamadas</p>
-  <div class="tabs">
-    <button class="tab active" data-view="evaluar">Evaluar llamada</button>
-    <button class="tab" data-view="metricas">Métricas del equipo</button>
-    <button class="tab" id="logoutBtn" style="flex:0 0 auto;color:#B9D2CD;">Cerrar sesión</button>
-  </div>
-</div>
-
-<div id="configWarning" style="display:none;background:#FBEEDD;color:#8A5518;padding:10px 16px;font-size:.8rem;text-align:center;border-bottom:1px solid #E7CDA0;">
-  ⚠ Falta configurar la URL de Google Apps Script en el código (variable <code>APPS_SCRIPT_URL</code>). Hasta hacerlo, no se van a poder guardar ni cargar evaluaciones.
-</div>
-
-
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6eef3;--card:#fff;--tx:#0E1B48;--mu:#4f6682;--pr:#27425D;--prt:#fff;--bd:#E2CAD8;--ok:#16a34a;--no:#ea580c;--in:#27425D;--out:#87A7D0}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0E1F2F;--card:#16304a;--tx:#E2CAD8;--mu:#87A7D0;--pr:#A56ABD;--prt:#0E1B48;--bd:#27425D;--in:#87A7D0;--out:#A56ABD}}
+:root[data-theme=dark]{--bg:#0E1F2F;--card:#16304a;--tx:#E2CAD8;--mu:#87A7D0;--pr:#A56ABD;--prt:#0E1B48;--bd:#27425D;--in:#87A7D0;--out:#A56ABD}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:linear-gradient(135deg,#0E1B48,#27425D 55%,#A56ABD);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+header h1{font-size:18px;margin:0;letter-spacing:1px}header small{opacity:.85;display:block}
+main{max-width:720px;margin:0 auto;padding:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mu);margin:10px 0 4px;text-transform:uppercase}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:80px}
+button{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:600;cursor:pointer;background:var(--pr);color:var(--prt)}
+button.g{background:var(--bd);color:var(--tx)}button.w{width:100%;margin-top:14px}
+.seg{display:flex;gap:8px}.seg label{flex:1;margin:0;text-transform:none;font-size:15px}
+.seg input{display:none}.seg span{display:block;text-align:center;padding:11px;border-radius:10px;border:2px solid var(--bd);color:var(--tx);font-weight:700}
+.seg input:checked+span.in{background:var(--in);border-color:var(--in);color:var(--prt)}
+.seg input:checked+span.out{background:var(--out);border-color:var(--out);color:#0E1B48}
+.seg input:checked+span.v{background:var(--ok);border-color:var(--ok);color:#fff}
+.seg input:checked+span.n{background:var(--no);border-color:var(--no);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips label{margin:0;text-transform:none;font-size:14px;color:var(--tx)}
+.chips input{display:none}.chips span{display:block;padding:7px 12px;border-radius:99px;border:1px solid var(--bd)}
+.chips input:checked+span{background:var(--pr);border-color:var(--pr);color:var(--prt)}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}nav button{background:var(--card);color:var(--tx);border:1px solid var(--bd);white-space:nowrap}
+nav button.on{background:var(--pr);color:var(--prt);border-color:var(--pr)}
+.row{border-left:5px solid var(--bd)}.row.v{border-left-color:var(--ok)}.row.n{border-left-color:var(--no)}
+.row h3{margin:0 0 4px;font-size:15px}.row p{margin:4px 0;color:var(--mu);font-size:13px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;margin-right:4px}
+.t-v{background:var(--ok)}.t-n{background:var(--no)}.t-in{background:var(--in);color:var(--prt)}.t-out{background:var(--out);color:#0E1B48}.t-s{background:var(--mu)}
+.hide{display:none!important}.pwrap{position:relative}.pwrap input{padding-right:52px}.pwrap button{position:absolute;right:4px;top:4px;bottom:4px;padding:0 12px;background:transparent;color:var(--tx);font-size:18px}.bar{height:10px;border-radius:6px;background:var(--pr);min-width:2px}.br{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}.br span:first-child{width:110px;flex:none}.note{background:linear-gradient(#fcf8e3,#f8efc0);border:1px solid #faebcc;color:#8a6d3b;border-radius:6px;padding:14px 16px;font-size:14px;line-height:1.45;margin:10px 0;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.05)}.note b{font-weight:700}.two{display:flex;gap:8px}.err{color:#dc2626;font-size:13px;min-height:18px}.empty{text-align:center;color:var(--mu);padding:24px}
+.late{border-left-color:#dc2626!important}.kpi{display:flex;gap:8px}.kpi div{flex:1;text-align:center;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px}.kpi b{font-size:22px;display:block}
+a.tel{color:var(--pr);font-weight:700;text-decoration:none}
+</style></head><body>
+<header><div><h1>TEAM LEE</h1><small id="who">CRM de llamadas</small></div><button class="g hide" id="out">Salir</button></header>
 <main>
-  <!-- ===================== EVALUAR ===================== -->
-  <section id="view-evaluar" class="view active">
-
-    <div class="card">
-      <h2>Datos de la llamada</h2>
-      <div class="grid2">
-        <div class="field">
-          <label>Evaluador/a</label>
-          <select id="fEvaluador" required autocomplete="off">
-            <option value="">Seleccionar...</option>
-            <option value="Tantucci Mariano">Tantucci Mariano</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Asesor/a evaluado/a</label>
-          <select id="fAsesor" required autocomplete="off">
-            <option value="">Seleccionar...</option>
-            <option value="Aldasoro Agustin">Aldasoro Agustin</option>
-            <option value="Barrega Flavia Alejandra">Barrega Flavia Alejandra</option>
-            <option value="Bertolini Patricia">Bertolini Patricia</option>
-            <option value="Carnez  Juan Martin">Carnez  Juan Martin</option>
-            <option value="Darvique Valentina Abril">Darvique Valentina Abril</option>
-            <option value="Ferrufino Romina Jesica">Ferrufino Romina Jesica</option>
-            <option value="Garcia Federico Ismael">Garcia Federico Ismael</option>
-            <option value="Gonzalez Longo Julia Melina">Gonzalez Longo Julia Melina</option>
-            <option value="Kladas Georgina Noelia">Kladas Georgina Noelia</option>
-            <option value="Llanos Gonzalez Camila Yanet">Llanos Gonzalez Camila Yanet</option>
-            <option value="Luna Luz Morena">Luna Luz Morena</option>
-            <option value="Maciel Rocio Judith">Maciel Rocio Judith</option>
-            <option value="Ratto Manfredi Jesica Micaela">Ratto Manfredi Jesica Micaela</option>
-            <option value="Schmeil Candela Grisel">Schmeil Candela Grisel</option>
-            <option value="Veron Noelia Soledad">Veron Noelia Soledad</option>
-            <option value="Yardin Dylan Alejandro Daniel">Yardin Dylan Alejandro Daniel</option>
-            <option value="Zaragoza Julian Alfredo">Zaragoza Julian Alfredo</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="field">
-          <label>Fecha de la llamada</label>
-          <input type="date" id="fFecha" required>
-        </div>
-        <div class="field">
-          <label>N° de llamada</label>
-          <input type="text" id="fNumLlamada" placeholder="Nº de llamada" required>
-        </div>
-      </div>
-      <div class="field">
-        <label>Cliente (opcional)</label>
-        <input type="text" id="fCliente" placeholder="Ref. opcional">
-      </div>
-      <div class="field">
-        <label>Comentarios</label>
-        <textarea id="fComentarios" placeholder="Comentarios sobre la llamada..." required></textarea>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Errores no críticos (ENC)</h2>
-      <div id="encContainer"></div>
-    </div>
-
-    <div class="card">
-      <h2>Errores críticos (ECNEG / ECUF)</h2>
-      <p style="font-size:.8rem;color:var(--ink-soft);margin-top:-6px;">
-        Para cada atributo, elegí <strong>1</strong> si no hubo error o <strong>0</strong> si ocurrió. Si elegís 0, seleccioná el motivo específico. Cualquier atributo en 0 determina un cero absoluto en la nota final.
-      </p>
-      <div id="errContainer"></div>
-    </div>
-
-    <div class="card">
-      <div class="field">
-        <label>Fortalezas</label>
-        <textarea id="fFortalezas" placeholder="Puntos fuertes de la llamada..." required></textarea>
-      </div>
-      <div class="field">
-        <label>Oportunidades de mejora</label>
-        <textarea id="fOportunidades" placeholder="Aspectos a mejorar..." required></textarea>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== METRICAS ===================== -->
-  <section id="view-metricas" class="view">
-    <div class="filter-row">
-      <div class="filter-group">
-        <div class="filter-field">
-          <label>Desde</label>
-          <input type="date" id="filterDesde">
-        </div>
-        <div class="filter-field">
-          <label>Hasta</label>
-          <input type="date" id="filterHasta">
-        </div>
-        <div class="filter-field">
-          <label>Asesor</label>
-          <select id="filterAsesor"><option value="">Todos los asesores</option></select>
-        </div>
-        <button type="button" class="filter-clear" id="filterClearBtn">Limpiar filtros</button>
-      </div>
-    </div>
-
-    <div class="metric-summary" id="metricSummary"></div>
-
-    <div class="card">
-      <h2>Ranking por asesor</h2>
-      <div id="rankingBox"></div>
-    </div>
-
-    <div class="card">
-      <h2>Calidad Reporte de PENC / PECNEG / PECUF</h2>
-      <p style="font-size:.8rem;color:var(--ink-soft);margin-top:-6px;">
-        Promedio por tipo de error: Error No Crítico (PENC), Error Crítico en Negocio (PECNEG) y Error Crítico en Usuario Final (PECUF).
-      </p>
-      <div id="pencReportBox"></div>
-    </div>
-
-    <div class="card">
-      <h2>Promedio por competencia (ENC)</h2>
-      <div id="attrBarsBox"></div>
-    </div>
-
-    <div class="card">
-      <h2>Errores críticos más frecuentes</h2>
-      <div id="errorBarsBox"></div>
-    </div>
-
-    <div class="card">
-      <h2>
-        Detalle de monitoreos
-        <a href="#" target="_blank" rel="noopener" class="sheet-icon-link" id="sheetIconLink" title="Ver datos crudos en Google Sheets">
-          <svg viewBox="0 0 48 48" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-            <rect x="6" y="4" width="36" height="40" rx="4" fill="#188038" fill-opacity="0.12"/>
-            <rect x="11" y="9" width="26" height="30" rx="1.5" fill="#ffffff" stroke="#188038" stroke-width="2"/>
-            <line x1="11" y1="18" x2="37" y2="18" stroke="#188038" stroke-width="2"/>
-            <line x1="11" y1="27" x2="37" y2="27" stroke="#188038" stroke-width="2"/>
-            <line x1="20.3" y1="9" x2="20.3" y2="39" stroke="#188038" stroke-width="2"/>
-            <line x1="27.7" y1="9" x2="27.7" y2="39" stroke="#188038" stroke-width="2"/>
-          </svg>
-        </a>
-      </h2>
-      <p style="font-size:.8rem;color:var(--ink-soft);margin-top:-6px;">
-        Click en un monitoreo para abrir la ficha de la evaluación con las observaciones, fortalezas y oportunidades de mejora.
-      </p>
-      <div id="detailBox"></div>
-    </div>
-
-    <a href="#" target="_blank" rel="noopener" class="sheet-link" id="sheetLink">
-      <span class="sheet-link-icon">
-        <svg viewBox="0 0 48 48" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
-          <rect x="6" y="4" width="36" height="40" rx="4" fill="#ffffff"/>
-          <rect x="6" y="4" width="36" height="40" rx="4" fill="#188038" fill-opacity="0.12"/>
-          <rect x="11" y="9" width="26" height="30" rx="1.5" fill="#ffffff" stroke="#188038" stroke-width="2"/>
-          <line x1="11" y1="18" x2="37" y2="18" stroke="#188038" stroke-width="2"/>
-          <line x1="11" y1="27" x2="37" y2="27" stroke="#188038" stroke-width="2"/>
-          <line x1="20.3" y1="9" x2="20.3" y2="39" stroke="#188038" stroke-width="2"/>
-          <line x1="27.7" y1="9" x2="27.7" y2="39" stroke="#188038" stroke-width="2"/>
-        </svg>
-      </span>
-      Ver ficha original en Google Sheets <span class="sheet-link-arrow">↗</span>
-    </a>
-  </section>
+<section id="login" class="card">
+ <h2 style="margin:0 0 4px">Ingresar</h2><p style="color:var(--mu);margin:0">Ingresá con tu mail y tu clave.</p>
+ <label>Mail</label><input id="em" type="email" autocomplete="username" placeholder="tu@mail.com">
+ <label>Clave</label><div class="pwrap"><input id="pw" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" id="eye" aria-label="Mostrar u ocultar clave">👁</button></div>
+ <div class="err" id="lerr"></div><button class="w" id="go">Ingresar</button>
+ <button class="w g" id="rec" type="button">Olvidé mi clave</button>
+</section>
+<section id="app" class="hide">
+ <nav id="tabs"></nav>
+ <div id="v-new"></div><div id="v-ag" class="hide"></div><div id="v-my" class="hide"></div><div id="v-res" class="hide"></div><div id="v-team" class="hide"></div>
+</section>
 </main>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,collection,doc,setDoc,updateDoc,onSnapshot,query,where}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ====== COMPLETAR ======
+const firebaseConfig={apiKey:"AIzaSyDvNPabHk4qon44vGWhe_JHDdos-ElQm3M",authDomain:"team-lee-ac517.firebaseapp.com",projectId:"team-lee-ac517",appId:"1:56784944122:web:043391b723ab3f734f8243"};
+const SUP_EMAIL="dalsina@gtnconsultores.com"; // mail de Supervisión
+const TEAMX=[
+{n:"Baez Romina Paola",e:""},{n:"Alegre Daira Julieta",e:""},{n:"Chazarreta Valentina",e:""},{n:"Chiappetta Celeste Marina",e:"cchiappetta.gpys@gmail.com"},{n:"Rodriguez Roxana Yael",e:""},{n:"Ponce Natalia",e:""},{n:"Barrios Adrian Alejandro",e:""},{n:"Carstairs Ailen Brigitte",e:""},{n:"Olmedo Sardinas Ayelen Debora",e:""},{n:"Devoli Gabriela Noemi",e:""},{n:"Diaz Jana Mikaela",e:""},{n:"Sebastian Leandro Gabriel",e:""},{n:"Flores Sandra Yohanna",e:""}];
+// =======================
+const TEAM=TEAMX.map(x=>x.n).sort();
+const SUP="Supervisión";
+const SERV=["Internet","Cable","Telefonía"],PROD=["Triple","Duo","Simple","UHF"],SVA=["Tphone","DC","Qualia","Prime","Sony","Universal","Hot Pack","T-Wifi","Wifi Mesh","Tplay"],PACTO=["Evalúa propuesta","Se consulta a BO","RA/Sugerencia","Desiste de contratación - No re llamar"],AGP=["Evalúa propuesta","Se consulta a BO","RA/Sugerencia"];
+const BO_MAIL="";
+const C0=["Partido","Localidad","WhatsApp del prospect","Mail del prospect"],NC="Número de cliente donde cargaron la sugerencia",OB="Observación (breve)";
+const CASOS=[
+{k:"cob",n:"1 · Consultas cobertura",s:"Consulta cobertura",f:["Dirección (completa incluyendo piso y/o depto)","Entre calles",...C0,NC,OB,"ID de vecinos con el servicio en esa dirección (si los hay)"],note:"La sugerencia debe estar cargada en un número de cliente de esa misma dirección. Adjuntá el print de pantalla con la incidencia."},
+{k:"est",n:"2 · Cambio de estructura casa/PH",s:"Cambio de estructura casa/PH",f:["Dirección","Piso y departamento (excluyente)","Entre calles",...C0,NC,OB],note:"Si el CRM no deja agregar una vivienda, NO avances con la venta: pedí el cambio, cargá la sugerencia y esperá aviso."},
+{k:"dni",n:"3 · Agregar DNI (DNI bloqueado)",s:"Agregar DNI a base de datos",f:["DNI","Género","Nombre correcto del prospecto","WhatsApp del prospect","Mail del prospect","Domicilio de contratación",OB],note:"Adjuntá el print de pantalla con la incidencia."},
+{k:"con",n:"4 · Solicitud contrato/comprobantes",s:"Solicitud de contrato/comprobantes de devolución",f:["Domicilio de contratación (completo incluyendo piso/depto)","Partido","Localidad","DNI de contratación","Mail del interesado","WhatsApp del interesado",OB,"N° de cliente donde se cargó la sugerencia"],note:"El cliente debe confirmar que tiene un contrato legítimo con sellos y firmas ANTES de enviar. Verificá que no esté vinculado al deudor (mismo apellido, familiar, mail o teléfono). Equipos se gestionan con logisticainversa@telecentro.net.ar. Adjuntá el print de pantalla.",chk:"El cliente confirmó que tiene contrato legítimo con sellos y firmas"},
+{k:"yoi",n:"5 · Documentación por Yoizen/WhatsApp",s:"Documentación enviada por Yoizen",f:["Dirección de contratación","CUIT/CUIL de contratación",...C0.slice(0,2),"WhatsApp del prospect","Mail del prospect",OB],note:"Adjuntá el contrato o los comprobantes según corresponda."},
+{k:"otr",n:"6 · Otros errores",s:"",f:["Dirección (completa incluyendo piso y/o depto)","Entre calles",...C0.slice(0,2),"DNI/CUIT/CUIL de contratación","WhatsApp del prospect","Mail del prospect",NC,OB,"ID de vecinos con el servicio en esa dirección (si los hay)"],note:"Adjuntá el print de pantalla con la incidencia.",subj:true}];
 
-<div class="score-bar" id="scoreBar">
-  <div class="score-row">
-    <div class="score-metric">
-      <div class="num" id="scoreBase">0</div>
-      <div class="lbl">Nota base (ENC)</div>
-    </div>
-    <div class="score-metric">
-      <div class="num" id="scoreErrores">0</div>
-      <div class="lbl">Errores críticos</div>
-    </div>
-    <div class="score-metric">
-      <div class="num" id="scoreFinal">0</div>
-      <div class="lbl">Nota final</div>
-    </div>
-    <button class="save-btn" id="saveBtn">Guardar evaluación</button>
-  </div>
-</div>
+const $=s=>document.querySelector(s);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+let me=null,calls=[],view="new",store={};
+const LS={get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const sha=async s=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("teamlee:"+s)))].map(b=>b.toString(16).padStart(2,"0")).join("");
+const slug=n=>n.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"_");
+const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
+const fmt=s=>s?new Date(s).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+const fmtF=s=>s?s.slice(0,10).split("-").reverse().join("/"):"";const fmtD=s=>s?s.split("-").reverse().join("/"):"";
+const today=()=>nowLocal().slice(0,10);
 
-<div class="toast" id="toast"></div>
+const fbApp=initializeApp(firebaseConfig),auth=getAuth(fbApp),fs=getFirestore(fbApp);auth.languageCode="es";
+const db={collection:n=>({doc:id=>({set:d=>setDoc(doc(fs,n,id),d),update:d=>updateDoc(doc(fs,n,id),d)}),onSnapshot:(cb,er,f)=>onSnapshot(f?query(collection(fs,n),where(f[0],"==",f[1])):collection(fs,n),cb,er)})};
+let unsub=null;
+function showLogin(){me=null;calls=[];$("#app").classList.add("hide");$("#login").classList.remove("hide");$("#out").classList.add("hide");$("#pw").value="";$("#pw").type="password";$("#eye").textContent="👁";$("#who").textContent="CRM de llamadas";$("#v-new").textContent=""}
+onAuthStateChanged(auth,u=>{
+ if(unsub){unsub();unsub=null}
+ if(!u){showLogin();return}
+ const em=(u.email||"").toLowerCase();
+ const name=em===SUP_EMAIL.toLowerCase()?SUP:(TEAMX.find(x=>x.e&&x.e.toLowerCase()===em)||{}).n;
+ if(!name){signOut(auth);$("#lerr").textContent="Tu mail no está habilitado en TEAM LEE. Avisá a Supervisión.";return}
+ unsub=db.collection("calls").onSnapshot(s=>{calls=s.docs.map(d=>({id:d.id,...d.data()}));if(me)render()},()=>{$("#lerr").textContent="No se pudieron leer los datos."},name===SUP?null:["uid",u.uid]);
+ enter(name)});
+$("#go").onclick=async()=>{const e=$("#em").value.trim(),p=$("#pw").value,er=$("#lerr");er.textContent="";
+ if(!e||!p){er.textContent="Completá mail y clave.";return}
+ try{await signInWithEmailAndPassword(auth,e,p)}catch(x){er.textContent=(x.code==="auth/too-many-requests"?"Demasiados intentos. Esperá unos minutos o recuperá tu clave.":x.code==="auth/invalid-credential"||x.code==="auth/wrong-password"||x.code==="auth/user-not-found"?"Mail o clave incorrectos.":"No se pudo ingresar.")+" ["+x.code+"]"}};
+$("#rec").onclick=async()=>{const e=$("#em").value.trim(),er=$("#lerr");er.style.color="";
+ if(!e){er.textContent="Escribí tu mail arriba y volvé a tocar 'Olvidé mi clave'.";return}
+ try{await sendPasswordResetEmail(auth,e)}catch(x){er.textContent=(x.code==="auth/invalid-email"?"El mail no es válido.":"No se pudo enviar el mail.")+" ["+x.code+"]";return}
+ er.style.color="var(--ok)";er.textContent="Si el mail está registrado, te enviamos un correo para crear una clave nueva. Revisá también spam."};
+$("#eye").onclick=()=>{const i=$("#pw"),v=i.type==="password";i.type=v?"text":"password";$("#eye").textContent=v?"🙈":"👁"};
+$("#out").onclick=()=>signOut(auth);
+function enter(u){me=u;$("#login").classList.add("hide");$("#app").classList.remove("hide");$("#out").classList.remove("hide");$("#who").textContent="Hola, "+u;view=u===SUP?"team":"new";render()}
 
-</div><!-- /appContent -->
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script>
-/* ============ CONFIG ============ */
-// Pegá acá la URL de tu Google Apps Script Web App (ver instrucciones de despliegue).
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3ihx33chKMxDXS33P_9KKBSTODmQELB7gTEF3trqvlsfXFIeKaTrFuzcbcSC7QLgAFg/exec";
-
-// Pegá acá la URL de tu Google Sheet (la de la barra de direcciones al abrir la planilla).
-const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1hBlJ8qce5urq-ITEh-ZLL8MkYBGJQILOmYadvDrvex4/edit?gid=0#gid=0";
-
-// Pegá acá la config de tu proyecto de Firebase (Configuración del proyecto > tus apps > Config del SDK).
-const firebaseConfig = {
-  apiKey: "AIzaSyBWHr2HtOq-7PwF9lCDnex0fHCcxLjYcHg",
-  authDomain: "qa-svas.firebaseapp.com",
-  projectId: "qa-svas",
-  appId: "1:1072491026754:web:32fb1376c188ae54a4d0db"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-
-/* ============ LOGIN (Firebase Authentication) ============ */
-(function initLogin(){
-  const loginScreen = document.getElementById('loginScreen');
-  const appContent = document.getElementById('appContent');
-  const loginBtn = document.getElementById('loginBtn');
-  const loginError = document.getElementById('loginError');
-
-  // Mantiene la sesión activa: si ya inició sesión antes en este navegador, entra directo.
-  auth.onAuthStateChanged(user => {
-    if(user){
-      loginScreen.style.display = 'none';
-      appContent.style.display = 'block';
-    } else {
-      loginScreen.style.display = 'flex';
-      appContent.style.display = 'none';
-    }
-  });
-
-  function intentarLogin(){
-    const email = document.getElementById('loginUser').value.trim();
-    const pass = document.getElementById('loginPass').value;
-    loginError.style.display = 'none';
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'Ingresando...';
-    auth.signInWithEmailAndPassword(email, pass)
-      .catch((err) => {
-        console.error('Error de login Firebase:', err);
-        loginError.textContent = 'Error (' + (err && err.code ? err.code : 'desconocido') + '): ' + (err && err.message ? err.message : 'no se pudo iniciar sesión');
-        loginError.style.display = 'block';
-      })
-      .finally(() => {
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Ingresar';
-      });
-  }
-
-  loginBtn.addEventListener('click', intentarLogin);
-  document.getElementById('loginPass').addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter') intentarLogin();
-  });
-
-  document.getElementById('logoutBtn').addEventListener('click', ()=> auth.signOut());
-})();
-
-/* ============ CONFIG (extraído de Enfoque_Calidad_SVA_OUT_Telecentro.xlsx) ============ */
-const ENC = [
-  { name:"Apertura", weight:15, items:["No saluda adecuadamente.","No se identifica como Telecentro."] },
-  { name:"Presentación", weight:15, items:["No se comunica con claridad.","No utiliza el nombre del cliente."] },
-  { name:"Escucha activa", weight:20, items:["Interrumpe al cliente.","Repregunta innecesariamente."] },
-  { name:"Empatía", weight:15, items:["No brinda un trato cordial.","No se adapta al cliente."] },
-  { name:"Habilidades de venta", weight:25, items:["No transmite seguridad.","No utiliza un lenguaje claro.","No genera interés en el cliente."] },
-  { name:"Despedida", weight:10, items:["No realiza un cierre cordial.","No genera una buena experiencia final."] }
-];
-
-const ERRORES = [
-  { tipo:"ECNEG", name:"Identificación y validación del cliente",
-    objetivo:"Garantizar que la venta se realice únicamente con el titular del servicio, validando correctamente su identidad.",
-    items:["No menciona nombre del cliente","No menciona número de cliente","No valida titularidad","Vende a no titular"] },
-  { tipo:"ECNEG", name:"Gestión comercial obligatoria",
-    objetivo:"Asegurar el cumplimiento de la estrategia comercial de contacto, insistencia y aprovechamiento de oportunidades de venta.",
-    items:["No insiste en la gestión","No verifica productos del cliente","No ofrece servicio faltante","No descarta correctamente"] },
-  { tipo:"ECNEG", name:"Proceso de contacto outbound",
-    objetivo:"Optimizar la contactabilidad y eficiencia de la campaña.",
-    items:["Excede tiempo de primer llamado","No detecta contestador","Deja correr contestador","No recontacta llamadas caídas","No consulta horario de contacto","No completa planilla de no titulares"] },
-  { tipo:"ECUF", name:"Presentación y comunicación de la oferta",
-    objetivo:"Brindar información clara, completa y correcta sobre los servicios ofrecidos.",
-    items:["No menciona valores en pesos","Información incompleta o confusa"] },
-  { tipo:"ECNEG", name:"Cierre de venta",
-    objetivo:"Asegurar una aceptación explícita y consciente del cliente.",
-    items:["No busca cierre","No obtiene aceptación clara","No informa activación"] },
-  { tipo:"ECNEG", name:"Manejo de objeciones",
-    objetivo:"Gestionar correctamente todas las objeciones utilizando técnicas comerciales definidas.",
-    items:["No rebate objeciones","Respuesta débil o incorrecta","Evita gestionar objeciones"] },
-  { tipo:"ECUF", name:"Información de otras áreas",
-    objetivo:"Evitar brindar información incorrecta de otras áreas.",
-    items:["Brinda información incorrecta de otra área","No informa que corresponde a otra área","No transfiere el llamado"] }
-];
-
-/* ============ STATE ============ */
-let encState = ENC.map(() => ({ cumple:'', motivo:'' }));
-let errState = ERRORES.map(() => ({ cumple:'', motivo:'' }));
-let allRecords = [];
-
-/* ============ RENDER FORM ============ */
-const encContainer = document.getElementById('encContainer');
-ENC.forEach((attr, ai) => {
-  const block = document.createElement('div');
-  block.className = 'attr-block';
-  block.innerHTML = `
-    <div class="attr-head">
-      <div class="attr-title">
-        <span class="badge">${attr.weight}</span>
-        <span class="name">${attr.name}</span>
-      </div>
-      <span class="tag-status" id="tag-enc-${ai}"><span class="icon">🍃</span> E.N.C</span>
-    </div>
-    <div class="attr-select-row">
-      <select class="enc-cumple" data-ai="${ai}">
-        <option value="">Seleccionar...</option>
-        <option value="1">1</option>
-        <option value="0">0</option>
-      </select>
-      <select class="enc-motivo motivo-select" data-ai="${ai}" disabled>
-        <option value="">Seleccionar motivo...</option>
-        ${attr.items.map(txt=>`<option value="${txt}">${txt}</option>`).join('')}
-      </select>
-    </div>
-  `;
-  encContainer.appendChild(block);
-});
-
-const errContainer = document.getElementById('errContainer');
-ERRORES.forEach((grp, gi) => {
-  const block = document.createElement('div');
-  block.className = 'attr-block';
-  block.innerHTML = `
-    <div class="attr-head err" data-toggle="${gi}">
-      <div class="attr-title">
-        <span class="badge tag">${grp.tipo}</span>
-        <span class="name">${grp.name}</span>
-      </div>
-      <button type="button" class="info-toggle" data-toggle-btn="${gi}">i</button>
-      <span class="tag-status" id="tag-err-${gi}"><span class="icon">🍃</span> ${grp.tipo}</span>
-    </div>
-    <div class="attr-desc" id="desc-${gi}">${grp.objetivo}</div>
-    <div class="attr-select-row">
-      <select class="err-cumple" data-gi="${gi}">
-        <option value="">Seleccionar...</option>
-        <option value="1">1</option>
-        <option value="0">0</option>
-      </select>
-      <select class="err-motivo motivo-select" data-gi="${gi}" disabled>
-        <option value="">Seleccionar motivo...</option>
-        ${grp.items.map(txt=>`<option value="${txt}">${txt}</option>`).join('')}
-      </select>
-    </div>
-  `;
-  errContainer.appendChild(block);
-});
-
-document.querySelectorAll('[data-toggle-btn]').forEach(btn=>{
-  btn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    const id = btn.getAttribute('data-toggle-btn');
-    document.getElementById('desc-'+id).classList.toggle('open');
-  });
-});
-
-function setTagStatus(tagId, isError){
-  const el = document.getElementById(tagId);
-  if(!el) return;
-  el.querySelector('.icon').textContent = isError ? '🔥' : '🍃';
-  el.style.color = isError ? 'var(--crit)' : 'var(--ink-soft)';
+function render(){
+ const sup=me===SUP,tabs=sup?[["team","Equipo"],["res","Resumen"]]:[["new","Nueva llamada"],["ag","Agenda de hoy"],["my","Mis llamadas"],["res","Resumen"]];
+ const nav=$("#tabs");nav.textContent="";
+ const pend=mine().filter(c=>c.agenda&&!c.hecho&&c.agenda.slice(0,10)<=today()).length;
+ tabs.forEach(([k,l])=>{const b=el("button",view===k?"on":"",l+(k==="ag"&&pend?" ("+pend+")":""));b.onclick=()=>{view=k;render()};nav.append(b)});
+ ["new","ag","my","res","team"].forEach(k=>$("#v-"+k).classList.toggle("hide",k!==view));
+ if(view==="new"&&!$("#v-new").firstChild)form();
+ if(view==="ag")agenda();if(view==="res")resumen();if(view==="my")list($("#v-my"),mine());if(view==="team")team();
 }
+const mine=()=>calls.filter(c=>c.asesor===me).sort((a,b)=>(b.fecha||"").slice(0,10).localeCompare((a.fecha||"").slice(0,10))||(b.creado||0)-(a.creado||0));
 
-/* ============ SCORE LOGIC ============ */
-function computeScore(){
-  let base = 0;
-  ENC.forEach((attr, ai)=>{
-    if(encState[ai].cumple === '1') base += attr.weight;
-  });
-  base = Math.round(base * 10) / 10;
+function radio(name,opts,cls,def){const d=el("div","seg");opts.forEach(([v,l,c],i)=>{const lb=el("label"),r=el("input");r.type="radio";r.name=name;r.value=v;if(i===def)r.checked=true;const s=el("span",c,l);lb.append(r,s);d.append(lb)});return d}
+function chips(name,opts){const d=el("div","chips");opts.forEach(v=>{const lb=el("label"),c=el("input");c.type="checkbox";c.name=name;c.value=v;lb.append(c,el("span",0,v));d.append(lb)});return d}
+function fld(l,i){const w=el("div");w.append(el("label",0,l),i);return w}
+function inp(id,type,ph){const i=el("input");i.id=id;i.type=type||"text";if(ph)i.placeholder=ph;return i}
 
-  let triggeredErrors = [];
-  ERRORES.forEach((grp, gi)=>{
-    if(errState[gi].cumple === '0'){
-      triggeredErrors.push(`${grp.name} · ${errState[gi].motivo || '(motivo no especificado)'}`);
-    }
-  });
-
-  const final = triggeredErrors.length > 0 ? 0 : base;
-  return { base, triggeredErrors, final };
+let editing=null;
+function form(ed){editing=ed||null;
+ const f=$("#v-new"),c=el("div","card");f.textContent="";f.append(c);
+ const dt=inp("f_fecha","date");dt.value=today();
+ const tel=inp("f_tel","tel","Ej: 11 5555 1234");tel.inputMode="tel";
+ c.append(fld("Fecha de llamado",dt),el("label",0,"Tipo"),radio("dir",[["IN","IN ⬇","in"],["OUT","OUT ⬆","out"]],0),fld("Teléfono",tel),fld("Nombre del llamante",inp("f_nom","text")));
+ c.append(el("label",0,"Resultado"),radio("venta",[["1","✅ Venta","v"],["0","❌ No venta","n"]],-1));
+ const V=el("div","hide"),N=el("div","hide");
+ const warn=noteBox("Recordá:"," ¿Querés grabar la llamada sin selección de venta Triple, Duo, Simple o productos principales (solo SVA)?");warn.classList.add("hide");
+ const wy=el("button",0,"Sí, grabar"),wn=el("button","g","Volver y elegir producto");wy.type=wn.type="button";[wy,wn].forEach(b=>b.style.cssText="margin:10px 8px 0 0;padding:8px 14px");
+ warn.append(el("div"),wy,wn);let warned=false;wy.onclick=()=>{warned=true;warn.classList.add("hide");c.querySelector("button.w").click()};wn.onclick=()=>warn.classList.add("hide");
+ V.append(fld("Fecha de instalación",inp("f_inst","date")),fld("Núm. de cliente",inp("f_cli","text")),el("label",0,"Producto"),radio("prod",PROD.map(p=>[p,p,"v"]),-1),el("label",0,"Servicios vendidos (Internet / Cable / Telefonía)"),chips("serv",SERV),el("label",0,"SVAS"),chips("sva",SVA));
+ const ps=el("select");ps.id="f_pacto";ps.append(new Option("Elegí una opción",""));PACTO.forEach(p=>ps.append(new Option(p,p)));
+ const ag=inp("f_ag","datetime-local");
+ const agw=fld("Agenda de re-llamada (fecha y hora)",ag);
+ const bo=boPanel(),boW=bo.el,raI=inp("f_ra","text","Nº de cliente"),raW=fld("Número de cliente donde se ingresó (RA/Sugerencia)",raI);raW.classList.add("hide");const evW=noteBox("Recordá"," rebatir objeciones mencionando beneficios y características del producto ofrecido induciendo la venta en un primer contacto.");evW.classList.add("hide");N.append(fld("Motivo",ps),evW,boW,raW,agw);
+ c.append(V,N,fld("Observaciones",(()=>{const t=el("textarea");t.id="f_obs";t.placeholder="Comentarios libres…";return t})()),warn,el("div","err"),el("button","w","Guardar llamada"));
+ const err=c.querySelector(".err");
+ c.querySelectorAll("[name=venta]").forEach(r=>r.onchange=()=>{V.classList.toggle("hide",r.value!=="1"||!r.checked);N.classList.toggle("hide",r.value!=="0"||!r.checked)});
+ ps.onchange=()=>{evW.classList.toggle("hide",ps.value!=="Evalúa propuesta");raW.classList.toggle("hide",ps.value!=="RA/Sugerencia");boW.classList.toggle("hide",ps.value!=="Se consulta a BO");bo.reset()};ps.addEventListener("change",()=>{const o=AGP.includes(ps.value);agw.classList.toggle("hide",!o);if(!o)ag.value=""});
+if(ed){const q=(n,v)=>{const x=c.querySelector("[name="+n+'][value="'+v+'"]');if(x){x.checked=true;x.dispatchEvent(new Event("change"))}};
+ dt.value=(ed.fecha||"").slice(0,10);q("dir",ed.dir);tel.value=ed.tel||"";$("#f_nom").value=ed.nombre||"";$("#f_obs").value=ed.obs||"";q("venta",ed.venta?"1":"0");
+ if(ed.venta){$("#f_inst").value=ed.instalacion||"";$("#f_cli").value=ed.cliente||"";q("prod",ed.producto);c.querySelectorAll("[name=serv]").forEach(x=>x.checked=(ed.servicios||[]).includes(x.value));(ed.svas||[]).forEach(v=>q("sva",v))}
+ else{ps.value=ed.pacto||"";ps.dispatchEvent(new Event("change"));ag.value=ed.agenda||"";raI.value=ed.clienteRA||"";if(ed.caso)bo.set(ed.caso,ed.casoData||{})}
+ const bn=el("div","note");bn.append("✏ Editando la llamada de "+ed.nombre+" ");const cb=el("button","g","Cancelar");cb.style.cssText="margin-left:8px;padding:4px 10px";cb.onclick=()=>{editing=null;form();view="my";render()};bn.append(cb);c.prepend(bn);c.querySelector("button.w").textContent="Guardar cambios"}
+ c.querySelectorAll("[name=prod]").forEach(r=>r.addEventListener("change",()=>{if(r.value==="Triple"&&r.checked)c.querySelectorAll("[name=serv]").forEach(x=>x.checked=true)}));
+ c.querySelector("button.w").onclick=async()=>{
+  const g=n=>(c.querySelector("[name="+n+"]:checked")||{}).value,venta=g("venta"),r={asesor:me,uid:auth.currentUser.uid,fecha:dt.value,dir:g("dir"),tel:tel.value.trim(),nombre:$("#f_nom").value.trim(),obs:$("#f_obs").value.trim(),venta:venta==="1",creado:Date.now()};
+  if(!r.fecha||!r.dir||!r.tel||!r.nombre||venta==null){err.textContent="Completá fecha, IN/OUT, teléfono, nombre y resultado.";return}
+  if(r.venta){r.instalacion=$("#f_inst").value;r.cliente=$("#f_cli").value.trim();r.producto=g("prod")||"";r.svas=[...c.querySelectorAll("[name=sva]:checked")].map(x=>x.value);r.servicios=[...c.querySelectorAll("[name=serv]:checked")].map(x=>x.value);
+   if(!r.cliente){err.textContent="En una venta falta el número de cliente.";return}if(r.producto&&!r.instalacion){err.textContent="Si hay producto principal, cargá la fecha de instalación.";return}if(!r.producto&&!r.svas.length&&!r.servicios.length){err.textContent="Elegí al menos un producto, servicio o SVA.";return}if(!r.producto&&!warned){warn.classList.remove("hide");warn.scrollIntoView({block:"center",behavior:"smooth"});return}}
+  else{r.pacto=ps.value;if(!r.pacto){err.textContent="Elegí el motivo.";return}if(r.pacto==="RA/Sugerencia"){r.clienteRA=raI.value.trim();if(!r.clienteRA){err.textContent="Ingresá el número de cliente donde se cargó la RA/Sugerencia.";return}}if(r.pacto==="Se consulta a BO"){if(!bo.caso()){err.textContent="Elegí el caso de la consulta a BO.";return}if(bo.chk&&!bo.chk()){err.textContent="Confirmá el contrato legítimo antes de continuar.";return}r.caso=bo.caso().k;r.casoData=bo.data()}
+   if(AGP.includes(r.pacto)){if(!ag.value){err.textContent="Agendá fecha y hora de la re-llamada.";return}r.agenda=ag.value;r.hecho=false}}
+  if(editing){r.creado=editing.creado||r.creado;r.editado=Date.now();if(r.agenda)r.hecho=editing.agenda===r.agenda?!!editing.hecho:false;await db.collection("calls").doc(editing.id).set(r)}else await save(r);editing=null;form();view=r.agenda?"ag":"my";render()};
 }
+async function save(r){const id="c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);r.id=id;
+ const{id:_,...d}=r;await db.collection("calls").doc(id).set(d)}
+async function patch(c,d){await db.collection("calls").doc(c.id).update(d)}
 
-function refreshScoreBar(){
-  const { base, triggeredErrors, final } = computeScore();
-  document.getElementById('scoreBase').textContent = base.toFixed(1);
-  document.getElementById('scoreErrores').textContent = triggeredErrors.length;
-  const finalEl = document.getElementById('scoreFinal');
-  finalEl.textContent = final.toFixed(1);
-  finalEl.style.color = final === 0 ? 'var(--crit)' : (final >= 85 ? 'var(--ok)' : (final>=70 ? 'var(--warn)' : 'var(--crit)'));
-  document.getElementById('scoreErrores').style.color = triggeredErrors.length>0 ? 'var(--crit)' : 'var(--ok)';
-}
+function card(c,sup){
+ const d=el("div","card row "+(c.venta?"v":"n"));
+ const h=el("h3");const a=el("a","tel",c.tel);a.href="tel:"+c.tel;h.append(c.nombre+" · ",a);d.append(h);
+ const t=el("p");[[c.venta?"VENTA":"NO VENTA",c.venta?"t-v":"t-n"],[c.dir,c.dir==="IN"?"t-in":"t-out"]].forEach(([x,k])=>t.append(el("span","tag "+k,x)));
+ if(c.venta&&c.producto)t.append(el("span","tag t-s",c.producto));if(!c.venta&&c.pacto)t.append(el("span","tag t-s",c.pacto));d.append(t);
+ d.append(el("p",0,"📅 "+fmtF(c.fecha)+(sup?" · 👤 "+c.asesor:"")));
+ if(c.venta){d.append(el("p",0,"🔧 "+(c.instalacion?"Instalación: "+fmtD(c.instalacion)+" · ":"")+"Cliente Nº "+c.cliente));if(c.servicios&&c.servicios.length)d.append(el("p",0,"📦 Servicios: "+c.servicios.join(", ")));if(c.svas&&c.svas.length)d.append(el("p",0,"➕ SVAS: "+c.svas.join(", ")))}
+ if(c.caso){const cs=CASOS.find(x=>x.k===c.caso);if(cs){const p=el("p",0,"📧 BO: "+cs.n);const b=el("button","g","Reenviar mail");b.style.cssText="margin-left:8px;padding:4px 10px";b.onclick=()=>mailTo(cs,c.casoData||{},c.asesor);p.append(b);d.append(p)}}
+ if(c.clienteRA)d.append(el("p",0,"🧾 RA/Sugerencia cargada en cliente Nº "+c.clienteRA));
+ if(c.agenda)d.append(el("p",0,(c.hecho?"✔ Re-llamada hecha: ":"⏰ Re-llamar: ")+fmt(c.agenda)));
+ if(c.obs)d.append(el("p",0,"💬 "+c.obs));
+ if(!sup&&c.asesor===me){const b=el("button","g","✏ Editar");b.style.cssText="margin-top:6px;padding:6px 12px";b.onclick=()=>{view="new";form(c);render()};d.append(b)}
+ return d}
+function list(box,arr,sup){box.textContent="";if(!arr.length){box.append(el("div","empty","Todavía no hay llamadas registradas."));return}
+ const k=el("div","kpi");[["Total",arr.length],["Ventas",arr.filter(c=>c.venta).length],["No venta",arr.filter(c=>!c.venta).length]].forEach(([l,n])=>{const x=el("div");x.append(el("b",0,n),l);k.append(x)});
+ k.style.marginBottom="12px";box.append(k);arr.forEach(c=>box.append(card(c,sup)))}
+function agenda(){const box=$("#v-ag");box.textContent="";
+ const a=mine().filter(c=>c.agenda&&!c.hecho).sort((x,y)=>x.agenda.localeCompare(y.agenda));
+ const hoy=a.filter(c=>c.agenda.slice(0,10)<=today()),prox=a.filter(c=>c.agenda.slice(0,10)>today());
+ const sec=(t,arr)=>{box.append(el("h3",0,t));if(!arr.length)box.append(el("div","empty","Sin llamadas pendientes 🎉"));arr.forEach(c=>{const d=card(c);if(c.agenda.slice(0,10)<today())d.classList.add("late");const b=el("button","w","✔ Marcar como llamado");b.onclick=()=>patch(c,{hecho:true});d.append(b);box.append(d)})};
+ sec("📞 Para llamar hoy (y atrasadas)",hoy);sec("🗓 Próximos días",prox)}
+function team(){const box=$("#v-team");box.textContent="";
+ const s=el("select");s.append(new Option("Todos los asesores",""));TEAM.forEach(n=>s.append(new Option(n,n)));s.value=team.f||"";
+ const b=el("button","w g","⬇ Descargar CSV");box.append(s);
+ const body=el("div");box.append(body);box.append(b);
+ const arr=()=>calls.filter(c=>!s.value||c.asesor===s.value).sort((a,b)=>(b.fecha||"").slice(0,10).localeCompare((a.fecha||"").slice(0,10))||(b.creado||0)-(a.creado||0));
+ const draw=()=>{team.f=s.value;list(body,arr(),true)};s.onchange=draw;draw();
+ b.onclick=async()=>{const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"',H=["Asesor","Fecha","IN/OUT","Teléfono","Nombre","Venta","Instalación","Cliente","Producto","Servicios","SVAS","Motivo","Cliente RA/Sugerencia","Agenda","Observaciones"];
+  const rows=arr().map(c=>[c.asesor,c.fecha,c.dir,c.tel,c.nombre,c.venta?"Sí":"No",c.instalacion,c.cliente,c.producto,(c.servicios||[]).join("/"),(c.svas||[]).join("/"),c.pacto,c.clienteRA,c.agenda,c.obs].map(q).join(","));
+  const csv="\ufeff"+[H.join(","),...rows].join("\n");
+  try{const dl=await claude.use("downloads");if(dl)return void await dl.save({filename:"team_lee_llamadas.csv",data:csv})}catch(e){}
+  const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);a.download="team_lee_llamadas.csv";a.click()}}
 
-document.querySelectorAll('.enc-cumple').forEach(sel=>{
-  sel.addEventListener('change', ()=>{
-    const ai = sel.dataset.ai;
-    encState[ai].cumple = sel.value;
-    const motivoSel = document.querySelector(`.enc-motivo[data-ai="${ai}"]`);
-    if(sel.value === '0'){
-      motivoSel.disabled = false;
-    } else {
-      motivoSel.disabled = true;
-      motivoSel.value = '';
-      encState[ai].motivo = '';
-    }
-    setTagStatus('tag-enc-'+ai, sel.value === '0');
-    refreshScoreBar();
-  });
-});
-document.querySelectorAll('.enc-motivo').forEach(sel=>{
-  sel.addEventListener('change', ()=>{
-    encState[sel.dataset.ai].motivo = sel.value;
-    refreshScoreBar();
-  });
-});
-document.querySelectorAll('.err-cumple').forEach(sel=>{
-  sel.addEventListener('change', ()=>{
-    const gi = sel.dataset.gi;
-    errState[gi].cumple = sel.value;
-    const motivoSel = document.querySelector(`.err-motivo[data-gi="${gi}"]`);
-    if(sel.value === '0'){
-      motivoSel.disabled = false;
-    } else {
-      motivoSel.disabled = true;
-      motivoSel.value = '';
-      errState[gi].motivo = '';
-    }
-    setTagStatus('tag-err-'+gi, sel.value === '0');
-    refreshScoreBar();
-  });
-});
-document.querySelectorAll('.err-motivo').forEach(sel=>{
-  sel.addEventListener('change', ()=>{
-    errState[sel.dataset.gi].motivo = sel.value;
-    refreshScoreBar();
-  });
-});
-
-// Algunos navegadores restauran el último valor elegido en los <select> al recargar la página.
-// Forzamos que arranquen vacíos siempre.
-document.getElementById('fEvaluador').selectedIndex = 0;
-document.getElementById('fAsesor').selectedIndex = 0;
-
-refreshScoreBar();
-
-if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PEGAR_AQUI') !== -1){
-  document.getElementById('configWarning').style.display = 'block';
-}
-
-const sheetLinkEl = document.getElementById('sheetLink');
-const sheetIconLinkEl = document.getElementById('sheetIconLink');
-if(!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.indexOf('PEGAR_AQUI') !== -1){
-  sheetLinkEl.style.display = 'none';
-  sheetIconLinkEl.style.display = 'none';
-} else {
-  sheetLinkEl.href = GOOGLE_SHEET_URL;
-  sheetIconLinkEl.href = GOOGLE_SHEET_URL;
-}
-
-/* ============ TABS ============ */
-function switchToView(viewName){
-  document.querySelectorAll('.tab[data-view]').forEach(t=>t.classList.toggle('active', t.dataset.view === viewName));
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-'+viewName).classList.add('active');
-  document.getElementById('scoreBar').style.display = viewName === 'evaluar' ? 'block' : 'none';
-  if(viewName === 'metricas') loadMetrics();
-}
-
-document.querySelectorAll('.tab[data-view]').forEach(tab=>{
-  tab.addEventListener('click', ()=> switchToView(tab.dataset.view));
-});
-
-/* ============ TOAST ============ */
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2600);
-}
-
-/* ============ VALIDACIÓN ============ */
-function validarFormulario(){
-  const faltantes = [];
-
-  document.querySelectorAll('.enc-cumple, .err-cumple, .motivo-select').forEach(sel=>sel.classList.remove('required-missing'));
-
-  const evaluador = document.getElementById('fEvaluador').value.trim();
-  const asesor = document.getElementById('fAsesor').value.trim();
-  const fecha = document.getElementById('fFecha').value.trim();
-  const numLlamada = document.getElementById('fNumLlamada').value.trim();
-  const comentarios = document.getElementById('fComentarios').value.trim();
-  const fortalezas = document.getElementById('fFortalezas').value.trim();
-  const oportunidades = document.getElementById('fOportunidades').value.trim();
-
-  if(!evaluador) faltantes.push('Evaluador/a');
-  if(!asesor) faltantes.push('Asesor/a evaluado/a');
-  if(!fecha) faltantes.push('Fecha de la llamada');
-  if(!numLlamada) faltantes.push('N° de llamada');
-  if(!comentarios) faltantes.push('Comentarios');
-  if(!fortalezas) faltantes.push('Fortalezas');
-  if(!oportunidades) faltantes.push('Oportunidades de mejora');
-
-  ENC.forEach((attr, ai)=>{
-    const st = encState[ai];
-    if(st.cumple === ''){
-      faltantes.push(`ENC · ${attr.name}`);
-      document.querySelector(`.enc-cumple[data-ai="${ai}"]`).classList.add('required-missing');
-    } else if(st.cumple === '0' && !st.motivo){
-      faltantes.push(`ENC · ${attr.name} (motivo)`);
-      document.querySelector(`.enc-motivo[data-ai="${ai}"]`).classList.add('required-missing');
-    }
-  });
-
-  ERRORES.forEach((grp, gi)=>{
-    const st = errState[gi];
-    if(st.cumple === ''){
-      faltantes.push(`${grp.tipo} · ${grp.name}`);
-      document.querySelector(`.err-cumple[data-gi="${gi}"]`).classList.add('required-missing');
-    } else if(st.cumple === '0' && !st.motivo){
-      faltantes.push(`${grp.tipo} · ${grp.name} (motivo)`);
-      document.querySelector(`.err-motivo[data-gi="${gi}"]`).classList.add('required-missing');
-    }
-  });
-
-  return faltantes;
-}
-
-/* ============ SAVE ============ */
-document.getElementById('saveBtn').addEventListener('click', async ()=>{
-  const faltantes = validarFormulario();
-  if(faltantes.length > 0){
-    showToast(`Faltan completar ${faltantes.length} campo(s) obligatorio(s)`);
-    return;
-  }
-
-  const evaluador = document.getElementById('fEvaluador').value.trim();
-  const asesor = document.getElementById('fAsesor').value.trim();
-  const { base, triggeredErrors, final } = computeScore();
-  const record = {
-    evaluador,
-    asesor,
-    fecha: document.getElementById('fFecha').value,
-    numLlamada: document.getElementById('fNumLlamada').value.trim(),
-    cliente: document.getElementById('fCliente').value.trim(),
-    comentarios: document.getElementById('fComentarios').value.trim(),
-    fortalezas: document.getElementById('fFortalezas').value.trim(),
-    oportunidadesMejora: document.getElementById('fOportunidades').value.trim(),
-    encPorAtributo: ENC.map((attr,ai)=>({ attr:attr.name, weight:attr.weight, cumple:encState[ai].cumple, motivo:encState[ai].motivo, pct: encState[ai].cumple==='1' ? 100 : 0 })),
-    errPorAtributo: ERRORES.map((grp,gi)=>({ tipo:grp.tipo, attr:grp.name, cumple:errState[gi].cumple, motivo:errState[gi].motivo })),
-    erroresDetectados: triggeredErrors,
-    notaBase: base,
-    notaFinal: final,
-    guardadoEn: new Date().toISOString()
-  };
-
-  const btn = document.getElementById('saveBtn');
-  btn.disabled = true;
-  btn.textContent = 'Guardando...';
-  try{
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(record)
-    });
-    const data = await res.json();
-    if(data && data.ok){
-      showToast('Evaluación guardada ✓');
-      resetForm();
-      switchToView('metricas');
-    } else {
-      showToast('No se pudo guardar. Probá de nuevo.');
-    }
-  }catch(err){
-    console.error(err);
-    showToast('Error al guardar la evaluación. Revisá la conexión con Google Sheets.');
-  }
-  btn.disabled = false;
-  btn.textContent = 'Guardar evaluación';
-});
-
-function resetForm(){
-  document.getElementById('fAsesor').value = '';
-  document.getElementById('fCliente').value = '';
-  document.getElementById('fNumLlamada').value = '';
-  document.getElementById('fComentarios').value = '';
-  document.getElementById('fFortalezas').value = '';
-  document.getElementById('fOportunidades').value = '';
-  document.getElementById('fFecha').value = '';
-  encState = ENC.map(() => ({ cumple:'', motivo:'' }));
-  errState = ERRORES.map(() => ({ cumple:'', motivo:'' }));
-  document.querySelectorAll('.enc-cumple, .err-cumple').forEach(sel=>sel.value='');
-  document.querySelectorAll('.enc-motivo, .err-motivo').forEach(sel=>{ sel.value=''; sel.disabled=true; });
-  document.querySelectorAll('.required-missing').forEach(el=>el.classList.remove('required-missing'));
-  ENC.forEach((attr,ai)=> setTagStatus('tag-enc-'+ai, false));
-  ERRORES.forEach((grp,gi)=> setTagStatus('tag-err-'+gi, false));
-  document.querySelectorAll('.attr-desc.open').forEach(d=>d.classList.remove('open'));
-  refreshScoreBar();
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-/* ============ METRICAS ============ */
-async function loadMetrics(){
-  const box = document.getElementById('metricSummary');
-  box.innerHTML = '<div class="empty-note">Cargando datos del equipo...</div>';
-  document.getElementById('rankingBox').innerHTML = '';
-  document.getElementById('attrBarsBox').innerHTML = '';
-  document.getElementById('errorBarsBox').innerHTML = '';
-
-  let records = [];
-  try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=list`);
-    const data = await res.json();
-    if(!data || !data.ok){
-      box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">No se pudieron cargar las métricas.</div>';
-      return;
-    }
-    // encPorAtributo y erroresDetectados viajan como texto JSON dentro de la celda; se parsean de nuevo acá.
-    records = (data.records || []).map(r=>{
-      const rec = { ...r };
-      ['encPorAtributo','errPorAtributo','erroresDetectados'].forEach(field=>{
-        if(typeof rec[field] === 'string'){
-          try{ rec[field] = JSON.parse(rec[field]); }catch(e){ rec[field] = []; }
-        }
-      });
-      rec.notaFinal = Number(rec.notaFinal) || 0;
-      return rec;
-    });
-    if(records.length === 0){
-      box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Todavía no hay evaluaciones cargadas por el equipo.</div>';
-      return;
-    }
-  }catch(err){
-    console.error(err);
-    box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">No se pudieron cargar las métricas. Revisá la conexión con Google Sheets.</div>';
-    return;
-  }
-
-  // ID de monitoreo: número secuencial estable según el orden en que se guardaron las filas en la planilla.
-  records.forEach((r, idx)=>{ r.monitoreoId = idx + 1; });
-
-  allRecords = records;
-
-  // poblar filtro de asesores
-  const asesores = Array.from(new Set(records.map(r=>r.asesor))).sort();
-  const sel = document.getElementById('filterAsesor');
-  const prevVal = sel.value;
-  sel.innerHTML = '<option value="">Todos los asesores</option>' + asesores.map(a=>`<option value="${a}">${a}</option>`).join('');
-  sel.value = prevVal;
-
-  applyMetricFilters();
-
-  sel.onchange = applyMetricFilters;
-  document.getElementById('filterDesde').oninput = applyMetricFilters;
-  document.getElementById('filterHasta').oninput = applyMetricFilters;
-  document.getElementById('filterClearBtn').onclick = ()=>{
-    document.getElementById('filterDesde').value = '';
-    document.getElementById('filterHasta').value = '';
-    sel.value = '';
-    applyMetricFilters();
-  };
-}
-
-function applyMetricFilters(){
-  const filtro = {
-    asesor: document.getElementById('filterAsesor').value,
-    desde: document.getElementById('filterDesde').value,
-    hasta: document.getElementById('filterHasta').value
-  };
-  renderMetrics(allRecords, filtro);
-}
-
-function renderMetrics(records, filtro){
-  filtro = filtro || {};
-  const { asesor, desde, hasta } = filtro;
-
-  const enRango = (r)=>{
-    if(!r.fecha) return true;
-    if(desde && r.fecha < desde) return false;
-    if(hasta && r.fecha > hasta) return false;
-    return true;
-  };
-
-  const porFecha = records.filter(enRango);
-  const data = asesor ? porFecha.filter(r=>r.asesor === asesor) : porFecha;
-
-  const box = document.getElementById('metricSummary');
-  if(data.length === 0){
-    box.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Sin evaluaciones para este filtro.</div>';
-    document.getElementById('rankingBox').innerHTML='';
-    document.getElementById('attrBarsBox').innerHTML='';
-    document.getElementById('errorBarsBox').innerHTML='';
-    document.getElementById('detailBox').innerHTML='';
-    document.getElementById('pencReportBox').innerHTML='';
-    return;
-  }
-
-  const total = data.length;
-  const promedio = data.reduce((s,r)=>s+r.notaFinal,0)/total;
-  const conError = data.filter(r=>r.erroresDetectados && r.erroresDetectados.length>0).length;
-  const pctError = (conError/total)*100;
-
-  box.innerHTML = `
-    <div class="metric-box"><div class="num">${total}</div><div class="lbl">Evaluaciones</div></div>
-    <div class="metric-box"><div class="num">${promedio.toFixed(1)}</div><div class="lbl">Nota final promedio</div></div>
-    <div class="metric-box"><div class="num">${conError}</div><div class="lbl">Llamadas con error crítico</div></div>
-    <div class="metric-box"><div class="num">${pctError.toFixed(0)}%</div><div class="lbl">% con cero absoluto</div></div>
-  `;
-
-  // ranking por asesor (respeta el rango de fechas, no el filtro por asesor)
-  const porAsesor = {};
-  porFecha.forEach(r=>{
-    if(!porAsesor[r.asesor]) porAsesor[r.asesor] = [];
-    porAsesor[r.asesor].push(r.notaFinal);
-  });
-  const ranking = Object.entries(porAsesor).map(([nombre, notas])=>({
-    nombre,
-    cant: notas.length,
-    prom: notas.reduce((a,b)=>a+b,0)/notas.length
-  })).sort((a,b)=>b.prom-a.prom);
-
-  document.getElementById('rankingBox').innerHTML = `
-    <table class="rank">
-      <thead><tr><th>Asesor</th><th>Evaluaciones</th><th>Promedio</th><th></th></tr></thead>
-      <tbody>
-        ${ranking.map(r=>{
-          const pillClass = r.prom>=85?'ok':(r.prom>=70?'warn':'crit');
-          return `<tr>
-            <td>${r.nombre}</td>
-            <td>${r.cant}</td>
-            <td>${r.prom.toFixed(1)}</td>
-            <td><span class="pill ${pillClass}">${pillClass==='ok'?'Bien':pillClass==='warn'?'A mejorar':'Crítico'}</span></td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-  `;
-
-  // promedio por atributo ENC (sobre datos filtrados)
-  const attrTotals = {};
-  ENC.forEach(a=> attrTotals[a.name] = {sum:0, count:0});
-  data.forEach(r=>{
-    (r.encPorAtributo||[]).forEach(e=>{
-      if(attrTotals[e.attr]){
-        attrTotals[e.attr].sum += e.pct;
-        attrTotals[e.attr].count += 1;
-      }
-    });
-  });
-  document.getElementById('attrBarsBox').innerHTML = ENC.map(a=>{
-    const t = attrTotals[a.name];
-    const avg = t.count ? (t.sum/t.count) : 0;
-    return `
-      <div class="bar-row">
-        <div class="bar-label"><span>${a.name}</span><span>${avg.toFixed(0)}%</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${avg}%"></div></div>
-      </div>
-    `;
-  }).join('');
-
-  // errores criticos mas frecuentes
-  const errCount = {};
-  data.forEach(r=>{
-    (r.erroresDetectados||[]).forEach(e=>{
-      errCount[e] = (errCount[e]||0) + 1;
-    });
-  });
-  const errList = Object.entries(errCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxCount = errList.length ? errList[0][1] : 1;
-
-  document.getElementById('errorBarsBox').innerHTML = errList.length ? errList.map(([txt,count])=>`
-    <div class="bar-row">
-      <div class="bar-label"><span>${txt}</span><span>${count}</span></div>
-      <div class="bar-track"><div class="bar-fill crit" style="width:${(count/maxCount)*100}%"></div></div>
-    </div>
-  `).join('') : '<div class="empty-note">Sin errores críticos registrados en este filtro.</div>';
-
-  renderDetailList(data);
-  renderPencReport(porFecha);
-}
-
-/* ============ REPORTE PENC / PECNEG / PECUF ============ */
-function calcularPencStats(registros){
-  const totalPenc = registros.length
-    ? registros.reduce((s,r)=> s + (Number(r.notaBase) || 0), 0) / registros.length
-    : 0;
-
-  let ecnegOk = 0, ecnegTotal = 0, ecufOk = 0, ecufTotal = 0;
-  registros.forEach(r=>{
-    (r.errPorAtributo || []).forEach(e=>{
-      if(e.tipo === 'ECNEG'){
-        ecnegTotal++;
-        if(e.cumple === '1') ecnegOk++;
-      } else if(e.tipo === 'ECUF'){
-        ecufTotal++;
-        if(e.cumple === '1') ecufOk++;
-      }
-    });
-  });
-
-  return {
-    penc: totalPenc,
-    pecneg: ecnegTotal ? (ecnegOk/ecnegTotal)*100 : null,
-    pecuf: ecufTotal ? (ecufOk/ecufTotal)*100 : null,
-    qMonitoreo: registros.length
-  };
-}
-
-function renderPencReport(porFecha){
-  const box = document.getElementById('pencReportBox');
-  if(!porFecha.length){
-    box.innerHTML = '<div class="empty-note">Sin monitoreos para este filtro.</div>';
-    return;
-  }
-
-  const equipo = calcularPencStats(porFecha);
-
-  const porAsesor = {};
-  porFecha.forEach(r=>{
-    if(!porAsesor[r.asesor]) porAsesor[r.asesor] = [];
-    porAsesor[r.asesor].push(r);
-  });
-  const filas = Object.entries(porAsesor)
-    .map(([nombre, registros]) => ({ nombre, ...calcularPencStats(registros) }))
-    .sort((a,b)=> a.nombre.localeCompare(b.nombre));
-
-  const fmtPct = (v) => v == null ? '—' : v.toFixed(2) + '%';
-
-  box.innerHTML = `
-    <table class="rank" style="margin-bottom:16px;">
-      <thead><tr><th>Equipo</th><th>PENC</th><th>PECNEG</th><th>PECUF</th><th>Q Monitoreo</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>Total equipo</td>
-          <td>${equipo.penc.toFixed(2)}</td>
-          <td>${fmtPct(equipo.pecneg)}</td>
-          <td>${fmtPct(equipo.pecuf)}</td>
-          <td>${equipo.qMonitoreo}</td>
-        </tr>
-      </tbody>
-    </table>
-    <table class="rank">
-      <thead><tr><th>Asesor</th><th>PENC</th><th>PECNEG</th><th>PECUF</th><th>Q Monitoreo</th></tr></thead>
-      <tbody>
-        ${filas.map(f=>`
-          <tr>
-            <td>${escapeHtml(f.nombre)}</td>
-            <td>${f.penc.toFixed(2)}</td>
-            <td>${fmtPct(f.pecneg)}</td>
-            <td>${fmtPct(f.pecuf)}</td>
-            <td>${f.qMonitoreo}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-}
-
-function formatFechaHora(value){
-  if(!value) return '—';
-  // Fecha simple sin hora (YYYY-MM-DD), como la ingresa el formulario.
-  if(/^\d{4}-\d{2}-\d{2}$/.test(value)){
-    const [y,m,d] = value.split('-');
-    return `${d}/${m}/${y}`;
-  }
-  // Si Google Sheets la convirtió en fecha/hora completa, mostramos solo fecha y hora locales.
-  const d = new Date(value);
-  if(isNaN(d.getTime())) return escapeHtml(value);
-  return d.toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-
-function escapeHtml(str){
-  return String(str == null ? '' : str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function renderDetailList(data){
-  const box = document.getElementById('detailBox');
-  if(!data.length){
-    box.innerHTML = '<div class="empty-note">Sin monitoreos para este filtro.</div>';
-    return;
-  }
-
-  const ordenado = [...data].sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||'') || (b.guardadoEn||'').localeCompare(a.guardadoEn||''));
-
-  const header = `
-    <div class="detail-table-head">
-      <span>ID</span>
-      <span>Operador</span>
-      <span>Servicio</span>
-      <span>Id_grabación</span>
-      <span>Fecha Monitoreo</span>
-      <span>Puntaje</span>
-      <span></span>
-    </div>
-  `;
-
-  const rows = ordenado.map((r, i)=>{
-    const nota = Number(r.notaFinal) || 0;
-    const pillClass = nota >= 85 ? 'ok' : (nota >= 70 ? 'warn' : 'crit');
-
-    const encRows = (r.encPorAtributo || []).map(e => `
-      <div class="detail-row">
-        <span>${escapeHtml(e.attr)}</span>
-        <span style="color:${e.cumple==='1' ? 'var(--ok)' : 'var(--crit)'}">${e.cumple==='1' ? '✅ Cumple' : ('❌ ' + escapeHtml(e.motivo || 'No cumple'))}</span>
-      </div>
-    `).join('');
-
-    const errRows = (r.errPorAtributo || []).map(e => `
-      <div class="detail-row">
-        <span>${escapeHtml(e.tipo)} · ${escapeHtml(e.attr)}</span>
-        <span style="color:${e.cumple==='1' ? 'var(--ok)' : 'var(--crit)'}">${e.cumple==='1' ? '✅ Sin error' : ('🔥 ' + escapeHtml(e.motivo || 'Error sin motivo especificado'))}</span>
-      </div>
-    `).join('');
-
-    return `
-      <div class="detail-item">
-        <div class="detail-head" data-detail-toggle="${i}">
-          <span>${r.monitoreoId != null ? r.monitoreoId : '—'}</span>
-          <span>${escapeHtml(r.asesor) || '—'}</span>
-          <span>SVA OUT</span>
-          <span>${escapeHtml(r.numLlamada) || '—'}</span>
-          <span>${formatFechaHora(r.fecha)}</span>
-          <span class="pill ${pillClass}">${nota.toFixed(1)}</span>
-          <span class="dh-chevron">▾</span>
-        </div>
-        <div class="detail-body" id="detail-body-${i}">
-          <div class="detail-section">
-            <h4>Observaciones</h4>
-            <p>${escapeHtml(r.comentarios) || '—'}</p>
-          </div>
-          <div class="detail-section">
-            <h4>Fortalezas</h4>
-            <p>${escapeHtml(r.fortalezas) || '—'}</p>
-          </div>
-          <div class="detail-section">
-            <h4>Oportunidades de mejora</h4>
-            <p>${escapeHtml(r.oportunidadesMejora) || '—'}</p>
-          </div>
-          <div class="detail-section">
-            <h4>Errores no críticos (ENC)</h4>
-            ${encRows || '<p>Sin datos.</p>'}
-          </div>
-          <div class="detail-section">
-            <h4>Errores críticos (ECNEG / ECUF)</h4>
-            ${errRows || '<p>Sin datos.</p>'}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  box.innerHTML = header + rows;
-
-  document.querySelectorAll('[data-detail-toggle]').forEach(head=>{
-    head.addEventListener('click', ()=>{
-      const id = head.getAttribute('data-detail-toggle');
-      head.classList.toggle('open');
-      document.getElementById('detail-body-'+id).classList.toggle('open');
-    });
-  });
-}
-</script>
-</body>
-</html>
+function mailBody(cs,d,who){const L=cs.f.map(f=>"- "+f+": "+(d[f]||"")).join("\n");return L+"\n\n(Recordá adjuntar print/contrato/comprobantes si corresponde)\n\nAsesor/a: "+who}
+function mailTo(cs,d,who){const sub=cs.subj?(d.__subj||"error de portal o CRM"):cs.s;
+ const a=document.createElement("a");a.href="mailto:"+BO_MAIL+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(mailBody(cs,d,who));a.click()}
+function noteBox(l,t){const n=el("div","note"),b=el("b",0,l);n.append(b,t);return n}
+function boPanel(){
+ const w=el("div","hide"),sel=el("select");sel.append(new Option("Elegí el caso",""));CASOS.forEach(c=>sel.append(new Option(c.n,c.k)));
+ const box=el("div");let cur=null,vals={},ck=null,ins={};w.append(el("label",0,"Caso de consulta a BO"),sel,box);
+ const api={el:w,caso:()=>cur,data:()=>({...vals}),chk:null,reset(){sel.value="";draw()},set(k,d){sel.value=k;draw();Object.entries(d).forEach(([f,v])=>{if(ins[f]){ins[f].value=v;vals[f]=v}})}};
+ function draw(){box.textContent="";cur=CASOS.find(c=>c.k===sel.value)||null;vals={};ins={};api.chk=null;if(!cur)return;
+  box.append(noteBox("Recordá:"," "+cur.note));
+  if(cur.subj){const i=el("input");i.placeholder="error de portal o CRM";i.oninput=()=>vals.__subj=i.value;ins.__subj=i;box.append(fld("Asunto (nombre del error)",i))}
+  cur.f.forEach(f=>{const i=el("input");i.oninput=()=>vals[f]=i.value;ins[f]=i;box.append(fld(f,i))});
+  if(cur.chk){const l=el("label");l.style.textTransform="none";const c=el("input");c.type="checkbox";c.style.cssText="width:auto;margin-right:8px";l.append(c,cur.chk);box.append(l);api.chk=()=>c.checked}
+  const r=el("div","two");const m=el("button",0,"📧 Generar mail"),cp=el("button","g","📋 Copiar texto");
+  m.type=cp.type="button";m.style.marginTop=cp.style.marginTop="12px";
+  m.onclick=()=>mailTo(cur,vals,me);
+  cp.onclick=async()=>{try{await navigator.clipboard.writeText("Asunto: "+(cur.subj?(vals.__subj||"error de portal o CRM"):cur.s)+"\n\n"+mailBody(cur,vals,me));cp.textContent="✔ Copiado"}catch(e){cp.textContent="No se pudo copiar"}};
+  r.append(m,cp);box.append(r)}
+ sel.onchange=draw;return api}
+const res={d:today().slice(0,8)+"01",h:today(),a:""};
+function bars(t,m,col){const box=el("div","card");box.append(el("b",0,t));const e=Object.entries(m).sort((a,b)=>b[1]-a[1]);if(!e.length)box.append(el("div","empty","Sin datos"));const mx=e.length?e[0][1]:1;
+ e.forEach(([k,v])=>{const r=el("div","br");const b=el("div","bar");b.style.width=(v/mx*60)+"%";if(col)b.style.background=col;r.append(el("span",0,k),b,el("span",0,v));box.append(r)});return box}
+function resumen(){const box=$("#v-res");box.textContent="";const sup=me===SUP;
+ const c=el("div","card"),d=inp("r_d","date"),h=inp("r_h","date");d.value=res.d;h.value=res.h;
+ const two=el("div","two");two.append(fld("Desde",d),fld("Hasta",h));c.append(two);
+ let sa=null;if(sup){sa=el("select");sa.append(new Option("Todos los asesores",""));TEAM.forEach(n=>sa.append(new Option(n,n)));sa.value=res.a;c.append(fld("Asesor/a",sa))}
+ const out=el("div");box.append(c,out);
+ const draw=()=>{res.d=d.value;res.h=h.value;if(sa)res.a=sa.value;out.textContent="";
+  const a=calls.filter(x=>(sup?(!res.a||x.asesor===res.a):x.asesor===me)&&(!res.d||(x.fecha||"").slice(0,10)>=res.d)&&(!res.h||(x.fecha||"").slice(0,10)<=res.h));
+  const v=a.filter(x=>x.venta),n=a.filter(x=>!x.venta),cv=a.length?Math.round(v.length/a.length*100):0;
+  const k=el("div","kpi");[["Llamadas",a.length],["Ventas",v.length],["No venta",n.length],["Conversión",cv+"%"]].forEach(([l,q])=>{const x=el("div");x.append(el("b",0,q),l);k.append(x)});
+  k.style.marginBottom="12px";out.append(k);
+  const cnt=(arr,f)=>{const m={};arr.forEach(x=>[].concat(f(x)||[]).forEach(y=>m[y]=(m[y]||0)+1));return m};
+  out.append(bars("Ventas por producto",cnt(v,x=>x.producto||"Solo SVA / sin producto principal"),"var(--ok)"),bars("Servicios vendidos",cnt(v,x=>x.servicios),"var(--in)"),bars("SVAS vendidos",cnt(v,x=>x.svas),"var(--pr)"),bars("Motivos de no venta",cnt(n,x=>x.pacto),"var(--no)"),bars("IN / OUT",cnt(a,x=>x.dir),"var(--in)"));
+  if(sup&&!res.a)out.append(bars("Ventas por asesor",cnt(v,x=>x.asesor),"var(--ok)"))};
+ d.onchange=h.onchange=draw;if(sa)sa.onchange=draw;draw()}
+</script></body></html>
